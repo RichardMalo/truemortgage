@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>World-Class Mortgage Calculator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+    
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+
+        :root {
+            --bg-color: #f0f2f5;
+            --text-color: #1e293b;
+            --primary-color: #2563eb; 
+            --accent-color: #10b981;  
+            --danger-color: #ef4444;  
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08);
+            --shadow-hover: 0 20px 40px -10px rgba(0, 0, 0, 0.12);
+            --input-bg: #f8fafc;
+            --spring-easing: cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        body.dark-mode {
+            --bg-color: #0b1121;
+            --text-color: #f8fafc;
+            --primary-color: #3b82f6;
+            --card-bg: #151e32;
+            --border-color: #1e293b;
+            --shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.4);
+            --input-bg: #0f172a;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0; padding: 0;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            -webkit-tap-highlight-color: transparent; /* Removes mobile tap flash */
+        }
+
+        .container { max-width: 1400px; margin: 0 auto; padding: 30px 20px; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+        h1, h2, h3 { font-weight: 800; margin: 0; letter-spacing: -0.02em; }
+        .section-title { margin: 0 0 15px 0; color: var(--primary-color); font-size: 1.15rem; }
+
+        /* Layout Grid */
+        .dashboard-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+        .full-width-section { grid-column: 1 / -1; margin-top: 24px; }
+        .column { display: flex; flex-direction: column; gap: 24px; }
+
+        /* Bento Cards */
+        .bento-card {
+            background-color: var(--card-bg); padding: 28px; border-radius: 28px;
+            box-shadow: var(--shadow); border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.4s var(--spring-easing), box-shadow 0.4s var(--spring-easing), background-color 0.3s ease;
+        }
+
+        /* Mobile specific squish restriction to prevent accidental zooming on tap */
+        @media (hover: hover) and (pointer: fine) {
+            .squishy-interactive:hover { transform: scale(1.015) translateY(-2px); box-shadow: var(--shadow-hover); }
+        }
+        .squishy-interactive:active { transform: scale(0.98); }
+        
+        /* Toggles */
+        .mode-toggle { display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600;}
+        .switch { position: relative; display: inline-block; width: 52px; height: 28px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s var(--spring-easing); border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s var(--spring-easing); border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        input:checked + .slider { background-color: var(--primary-color); }
+        input:checked + .slider:before { transform: translateX(24px); }
+
+        .small-switch { width: 44px; height: 24px; margin-top: 2px; }
+        .small-switch .slider:before { height: 16px; width: 16px; left: 4px; bottom: 4px; }
+        .small-switch input:checked + .slider:before { transform: translateX(20px); }
+        .section-header-with-toggle { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+
+        /* Inputs */
+        .input-group-row { display: flex; gap: 16px; margin-bottom: 16px; width: 100%; }
+        .input-group { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+        .input-group label { display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; color: var(--text-color); opacity: 0.9;}
+        .tooltip { font-size: 0.75rem; color: #888; font-weight: 400;}
+
+        input, .custom-select {
+            width: 100%; padding: 16px; border: 2px solid transparent;
+            border-radius: 14px; background-color: var(--input-bg);
+            color: var(--text-color); font-size: 1rem; font-weight: 600; box-sizing: border-box;
+            transition: all 0.3s ease; -webkit-appearance: none; /* Native iOS look removal */
+            height: 52px; /* Minimum mobile touch target */
+        }
+        input:focus, .custom-select:focus { outline: none; border-color: var(--primary-color); background-color: var(--card-bg); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1); }
+
+        /* Buttons */
+        .btn-group { display: flex; gap: 16px; margin-top: 10px;}
+        .squishy-btn {
+            flex: 1; padding: 18px; border: none; border-radius: 16px;
+            font-size: 1.1rem; font-weight: 700; cursor: pointer;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease;
+        }
+        .primary-btn { background-color: var(--primary-color); color: white; }
+        .secondary-btn { background-color: var(--input-bg); color: var(--text-color); }
+        
+        @media (hover: hover) and (pointer: fine) {
+            .primary-btn:hover { background-color: #1d4ed8; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(37, 99, 235, 0.3); }
+            .secondary-btn:hover { background-color: var(--border-color); transform: translateY(-2px); }
+        }
+
+        /* Stats & Visuals */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;}
+        .stat-box { background: var(--input-bg); padding: 20px; border-radius: 20px; text-align: center; }
+        .stat-box label { font-size: 0.85rem; font-weight: 700; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.05em; }
+        .kinetic-text { font-size: 1.6rem; font-weight: 800; margin-top: 8px; font-variant-numeric: tabular-nums; }
+        .highlight-box { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); }
+        .highlight-text { color: var(--accent-color); }
+
+        /* Fluid Pies */
+        .circles-container { display: flex; flex-direction: column; align-items: center; gap: 24px; width: 100%; }
+        .circle-wrapper { width: 100%; display: flex; flex-direction: column; align-items: center; background: var(--input-bg); padding: 20px; border-radius: 20px; }
+        .circle-wrapper span { display: block; margin-top: 15px; font-weight: 700; font-size: 0.95rem; text-align: center; }
+        .true-payment-circle { width: 100%; max-width: 240px; aspect-ratio: 1; }
+        .payment-breakdown-circle { width: 100%; max-width: 180px; aspect-ratio: 1; }
+
+        /* Charts */
+        .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100%, 1fr)); gap: 24px; }
+        @media (min-width: 900px) { .charts-grid { grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); } }
+        
+        .chart-wrapper { position: relative; min-height: 380px; padding: 15px; border-radius: 24px; background-color: var(--card-bg); width: 100%; box-sizing: border-box; }
+        .plotly-container { width: 100%; height: 100%; min-height: 350px; }
+        
+        .flip-btn {
+            position: absolute; top: 15px; right: 15px; z-index: 10;
+            background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-color);
+            padding: 8px 14px; border-radius: 12px; font-size: 0.75rem; font-weight: 800; cursor: pointer;
+            transition: all 0.2s var(--spring-easing); box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .modebar { display: none !important; }
+
+        /* Table */
+        .table-responsive { overflow-x: auto; max-height: 500px; border-radius: 14px; border: 1px solid var(--border-color); margin-top: 15px; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th, td { padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--border-color); font-variant-numeric: tabular-nums; font-size: 0.9rem; }
+        th { background-color: var(--input-bg); font-weight: 700; position: sticky; top: 0; z-index: 10; }
+        
+        #error-message { background-color: var(--danger-color); color: white; padding: 15px; border-radius: 14px; margin-bottom: 20px; text-align: center; font-weight: 600; display: none;}
+
+        /* Mobile Optimization Rules */
+        @media (max-width: 768px) {
+            .container { padding: 15px 12px; }
+            header { flex-direction: column; align-items: flex-start; gap: 15px; margin-bottom: 25px; }
+            header h1 { font-size: 1.8rem; }
+            .dashboard-layout { grid-template-columns: 1fr; gap: 16px; }
+            .bento-card { padding: 20px; border-radius: 22px; }
+            .input-group-row { flex-direction: column; gap: 16px; margin-bottom: 16px; }
+            .btn-group { flex-direction: column; }
+            .stats-grid { grid-template-columns: 1fr; gap: 12px; }
+            .stat-box { padding: 15px; }
+            .kinetic-text { font-size: 1.4rem; }
+            .chart-wrapper { padding: 10px; min-height: 320px; border-radius: 18px; }
+            .plotly-container { min-height: 300px; }
+            .flip-btn { top: 10px; right: 10px; padding: 6px 10px; }
+        }
+        
+        @media print {
+            body { background-color: white; color: black; }
+            header, .bento-card form, .btn-group, .flip-btn { display: none; }
+            .bento-card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; margin-bottom: 20px; }
+            .dashboard-layout { display: block; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="gsap-fade-in">
+            <h1>Mortgage Calculator</h1>
+            <div class="mode-toggle squishy-interactive">
+                <label for="mode-switch">Dark Mode</label>
+                <label class="switch">
+                    <input type="checkbox" id="mode-switch" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </header>
+
+        <div id="error-message"></div>
+
+        <div class="dashboard-layout">
+            
+            <div class="column gsap-slide-up">
+                <form id="mortgageForm" autocomplete="off">
+                    
+                    <div class="bento-card form-card">
+                        <h3 class="section-title">Property & Loan</h3>
+                        <div class="input-group-row">
+                            <div class="input-group">
+                                <label>Home Price ($)</label>
+                                <input type="number" id="homePrice" inputmode="decimal" required value="850000" step="1000" min="0">
+                            </div>
+                            <div class="input-group">
+                                <label>Down Payment ($)</label>
+                                <input type="number" id="downPayment" inputmode="decimal" required value="0" step="1000" min="0">
+                            </div>
+                        </div>
+                        <div class="input-group-row">
+                            <div class="input-group">
+                                <label>Interest Rate (%)</label>
+                                <input type="number" id="interestRate" inputmode="decimal" step="0.01" required value="2.62" min="0">
+                            </div>
+                            <div class="input-group">
+                                <label>Amortization (Yrs)</label>
+                                <input type="number" id="amortization" inputmode="decimal" required value="25" step="any" min="0.1">
+                            </div>
+                        </div>
+                        <div class="input-group-row">
+                            <div class="input-group">
+                                <label>Term Length (Yrs)</label>
+                                <input type="number" id="term" inputmode="decimal" required value="5" step="any" min="0.1">
+                            </div>
+                            <div class="input-group">
+                                <label>Compounding</label>
+                                <select id="compounding" class="custom-select">
+                                    <option value="semi">Canadian (Semi-Annual)</option>
+                                    <option value="monthly">US (Monthly)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bento-card form-card" style="margin-top: 24px;">
+                        <div class="section-header-with-toggle">
+                            <h3 class="section-title" style="margin:0;">Taxes & Insurance</h3>
+                            <div class="toggle-wrapper" title="Include Escrow (PITI)">
+                                <label class="switch small-switch">
+                                    <input type="checkbox" id="includePitiToggle">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div id="pitiSection" style="display: none; margin-top: 15px;">
+                            <div class="input-group-row">
+                                <div class="input-group">
+                                    <label>Property Tax (%/yr)</label>
+                                    <input type="number" id="propertyTax" inputmode="decimal" value="1.2" step="0.01" min="0">
+                                </div>
+                                <div class="input-group">
+                                    <label>Home Insurance ($/yr)</label>
+                                    <input type="number" id="homeInsurance" inputmode="decimal" value="1200" step="50" min="0">
+                                </div>
+                            </div>
+                            <div class="input-group-row">
+                                <div class="input-group">
+                                    <label>HOA Fees ($/mo)</label>
+                                    <input type="number" id="hoaFees" inputmode="decimal" value="0" step="10" min="0">
+                                </div>
+                                <div class="input-group">
+                                    <label>PMI (%/yr) <span class="tooltip">(Drops at 80% LTV)</span></label>
+                                    <input type="number" id="pmiRate" inputmode="decimal" value="0.5" step="0.01" min="0">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bento-card form-card" style="margin-top: 24px;">
+                        <h3 class="section-title">Repayment Strategy</h3>
+                        <div class="input-group-row">
+                            <div class="input-group">
+                                <label>Payment Frequency</label>
+                                <select id="paymentFrequency" class="custom-select">
+                                    <option value="monthly">Monthly</option>
+                                    <option value="semi-monthly">Semi-Monthly (24/yr)</option>
+                                    <option value="bi-weekly">Bi-Weekly (26/yr)</option>
+                                    <option value="accelerated-biweekly">Accelerated Bi-Weekly</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>Extra Payment ($)</label>
+                                <input type="number" id="extraPayment" inputmode="decimal" required value="0" step="50" min="0">
+                            </div>
+                        </div>
+                        <div class="input-group-row">
+                            <div class="input-group">
+                                <label>Start Date</label>
+                                <input type="date" id="firstPaymentDate">
+                            </div>
+                        </div>
+
+                        <div class="section-header-with-toggle" style="margin-top: 20px;">
+                            <h3 class="section-title" style="margin:0; font-size: 0.95rem;">Opportunity Cost</h3>
+                            <div class="toggle-wrapper" title="Compare paying off vs investing">
+                                <label class="switch small-switch">
+                                    <input type="checkbox" id="oppCostToggle">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div id="oppCostSection" style="display: none; margin-top: 15px;">
+                            <div class="input-group-row">
+                                <div class="input-group">
+                                    <label>Investment Return (%/yr)</label>
+                                    <input type="number" id="investRate" inputmode="decimal" value="7.0" step="0.1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="btn-group">
+                        <button type="button" id="clearBtn" class="squishy-btn secondary-btn">Reset</button>
+                        <button type="submit" id="calcBtn" class="squishy-btn primary-btn">Calculate</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="column gsap-slide-up" style="animation-delay: 0.1s;">
+                <div class="bento-card">
+                    <h3 class="section-title">Loan Summary</h3>
+                    <div class="stats-grid">
+                        <div class="stat-box squishy-interactive">
+                            <label>Mortgage Amount</label>
+                            <div class="kinetic-text" id="mortgageAmountDisplay" data-val="0">$0.00</div>
+                        </div>
+                        <div class="stat-box squishy-interactive">
+                            <label>Balance at Term End</label>
+                            <div class="kinetic-text" id="balanceAtTerm" data-val="0">$0.00</div>
+                        </div>
+                        <div class="stat-box squishy-interactive">
+                            <label>Actual Payoff Time</label>
+                            <div class="kinetic-text" id="paidOffIn">0 yrs</div>
+                        </div>
+                        <div class="stat-box highlight-box squishy-interactive">
+                            <label>Total Savings</label>
+                            <div class="kinetic-text highlight-text" id="extraSavedTotal" data-val="0">$0.00</div>
+                        </div>
+                    </div>
+
+                    <div class="circles-container">
+                        <div class="circle-wrapper squishy-interactive">
+                            <div class="true-payment-circle" id="monthlyPaymentCircle"></div>
+                            <span id="truePaymentLabel">True Periodic Payment (P & I)</span>
+                        </div>
+                        <div class="circle-wrapper squishy-interactive">
+                            <div class="payment-breakdown-circle" id="paymentBreakdownCircle"></div>
+                            <span>Principal vs. Interest</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="full-width-section column gsap-slide-up" style="animation-delay: 0.2s;">
+                <div class="bento-card">
+                    <h3 class="section-title">Visual Analysis</h3>
+                    <div class="charts-grid">
+                        <div class="chart-wrapper chart-box squishy-interactive">
+                            <button type="button" class="flip-btn" data-chart="chart3">FLIP</button>
+                            <div id="chart3" class="plotly-container"></div>
+                        </div>
+                        <div class="chart-wrapper chart-box squishy-interactive">
+                            <button type="button" class="flip-btn" data-chart="chart">FLIP</button>
+                            <div id="chart" class="plotly-container"></div>
+                        </div>
+                        <div class="chart-wrapper chart-box squishy-interactive">
+                            <button type="button" class="flip-btn" data-chart="chart4">FLIP</button>
+                            <div id="chart4" class="plotly-container"></div>
+                        </div>
+                        <div class="chart-wrapper chart-box squishy-interactive">
+                            <button type="button" class="flip-btn" data-chart="chart2">FLIP</button>
+                            <div id="chart2" class="plotly-container"></div>
+                        </div>
+                        <div class="chart-wrapper chart-box squishy-interactive">
+                            <button type="button" class="flip-btn" data-chart="chart11">FLIP</button>
+                            <div id="chart11" class="plotly-container"></div>
+                        </div>
+                        <div class="chart-wrapper chart-box squishy-interactive">
+                            <button type="button" class="flip-btn" data-chart="chart6">FLIP</button>
+                            <div id="chart6" class="plotly-container"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="ltv-container" class="bento-card" style="display: none;">
+                    <div class="chart-wrapper chart-box squishy-interactive">
+                        <button type="button" class="flip-btn" data-chart="chartLTV">FLIP</button>
+                        <div id="chartLTV" class="plotly-container"></div>
+                    </div>
+                </div>
+
+                <div id="oppcost-container" class="bento-card" style="display: none;">
+                    <div class="chart-wrapper chart-box squishy-interactive">
+                        <button type="button" class="flip-btn" data-chart="chartOppCost">FLIP</button>
+                        <div id="chartOppCost" class="plotly-container"></div>
+                    </div>
+                </div>
+
+                <div id="comparison-container" class="bento-card" style="display: none;">
+                    <h3 class="section-title">Impact of Accelerated Strategy</h3>
+                    <div class="charts-grid">
+                        <div class="chart-wrapper chart-box squishy-interactive">
+                            <button type="button" class="flip-btn" data-chart="chart9">FLIP</button>
+                            <div id="chart9" class="plotly-container"></div>
+                        </div>
+                        <div class="chart-wrapper chart-box squishy-interactive">
+                            <button type="button" class="flip-btn" data-chart="chart12">FLIP</button>
+                            <div id="chart12" class="plotly-container"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bento-card">
+                    <h3 class="section-title">Amortization Schedule</h3>
+                    <div class="table-responsive">
+                        <table id="amortization-table">
+                            <thead>
+                                <tr>
+                                    <th>Date / #</th>
+                                    <th>Total Payment</th>
+                                    <th>Principal</th>
+                                    <th>Interest</th>
+                                    <th id="escrowTh" style="display: none;">Escrow (Tax/Ins)</th>
+                                    <th>Extra</th>
+                                    <th>Balance</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const CONFIG = {
+            colors: {
+                principal: '#2563eb', interest: '#ef4444', tax: '#f59e0b',
+                ins: '#8b5cf6', hoa: '#14b8a6', pmi: '#ec4899',
+                extra: '#10b981', balance: '#64748b', thresholdRed: '#ef4444', investLine: '#8b5cf6'
+            }
+        };
+
+        const PLOT_CONFIG = { responsive: true, displayModeBar: false };
+        let state = { isDark: true };
+        const chartFlipState = { chart3: false, chart: false, chart4: false, chart2: false, chart11: false, chart6: false, chartLTV: false, chartOppCost: false, chart9: false, chart12: false };
+
+        const els = {
+            form: document.getElementById('mortgageForm'),
+            inputs: {
+                homePrice: document.getElementById('homePrice'), downPayment: document.getElementById('downPayment'),
+                rate: document.getElementById('interestRate'), amortization: document.getElementById('amortization'),
+                term: document.getElementById('term'), compounding: document.getElementById('compounding'),
+                frequency: document.getElementById('paymentFrequency'), pitiToggle: document.getElementById('includePitiToggle'),
+                tax: document.getElementById('propertyTax'), ins: document.getElementById('homeInsurance'),
+                hoa: document.getElementById('hoaFees'), pmi: document.getElementById('pmiRate'),
+                oppCostToggle: document.getElementById('oppCostToggle'), investRate: document.getElementById('investRate'),
+                extra: document.getElementById('extraPayment'), date: document.getElementById('firstPaymentDate')
+            },
+            results: {
+                mortgageDisplay: document.getElementById('mortgageAmountDisplay'), monthly: document.getElementById('monthlyPaymentCircle'), 
+                breakdown: document.getElementById('paymentBreakdownCircle'), termBalance: document.getElementById('balanceAtTerm'),
+                paidOffIn: document.getElementById('paidOffIn'), saved: document.getElementById('extraSavedTotal'),
+                truePaymentLabel: document.getElementById('truePaymentLabel')
+            },
+            containers: {
+                pitiSection: document.getElementById('pitiSection'), oppCostSection: document.getElementById('oppCostSection'),
+                comparison: document.getElementById('comparison-container'), error: document.getElementById('error-message'),
+                escrowTh: document.getElementById('escrowTh'), ltv: document.getElementById('ltv-container'),
+                oppCost: document.getElementById('oppcost-container')
+            },
+            modeSwitch: document.getElementById('mode-switch')
+        };
+
+        // --- MATH ENGINE ---
+        const getMonthlyPayment = (p, rate, n) => rate === 0 ? p / n : p * (rate * Math.pow(1 + rate, n)) / (Math.pow(1 + rate, n) - 1);
+
+        const generateSchedule = (inputs, isBaseline = false) => {
+            const principal = inputs.homePrice - inputs.downPayment;
+            let stdRate = (inputs.compounding === 'semi') ? Math.pow(1 + (inputs.annualRate / 100 / 2), 1 / 6) - 1 : (inputs.annualRate / 100 / 12);
+            const basePI = getMonthlyPayment(principal, stdRate, inputs.amortizationYears * 12);
+
+            const freq = isBaseline ? 'monthly' : inputs.frequency;
+            const userExtra = isBaseline ? 0 : inputs.extraPayment;
+
+            let perYear, perPI;
+            if(freq === 'monthly') { perYear = 12; perPI = basePI; }
+            else if(freq === 'semi-monthly') { perYear = 24; perPI = basePI / 2; }
+            else if(freq === 'bi-weekly') { perYear = 26; perPI = (basePI * 12) / 26; }
+            else { perYear = 26; perPI = basePI / 2; }
+
+            let perRate = (inputs.compounding === 'semi') ? Math.pow(1 + (inputs.annualRate / 100 / 2), 2 / perYear) - 1 : (inputs.annualRate / 100 / perYear);
+            const pTax = (inputs.homePrice * (inputs.taxRate / 100)) / perYear;
+            const pIns = inputs.insRate / perYear;
+            const pHOA = (inputs.hoaRate * 12) / perYear;
+            const pmiDrop = inputs.homePrice * 0.80; 
+
+            let bal = principal, totI = 0, totP = 0, totEx = 0, totEsc = 0, sched = [];
+            let cDate = inputs.startDate ? new Date(inputs.startDate) : null;
+            const maxP = Math.ceil(inputs.amortizationYears * perYear) + (perYear * 5); 
+
+            for (let i = 1; i <= maxP; i++) {
+                if (bal <= 0.009) break;
+                let pPMI = (bal > pmiDrop && inputs.pmiRate > 0) ? (principal * (inputs.pmiRate / 100)) / perYear : 0;
+                let pEscrow = pTax + pIns + pHOA + pPMI;
+                let iPart = bal * perRate;
+                let pPart = perPI - iPart;
+                let cExtra = userExtra;
+
+                if (pPart + cExtra > bal) {
+                    pPart = bal - cExtra; 
+                    if (pPart < 0) { cExtra = bal; pPart = 0; }
+                }
+
+                bal -= (pPart + cExtra);
+                if (bal < 0.01) bal = 0;
+
+                totI += iPart; totP += pPart; totEx += cExtra; totEsc += pEscrow;
+
+                let dLbl = `P${i}`, yLbl = (i / perYear);
+                if (cDate) {
+                    const d = new Date(cDate.getTime() + Math.abs(cDate.getTimezoneOffset() * 60000));
+                    if (freq === 'monthly') d.setMonth(d.getMonth() + (i - 1));
+                    else if (freq === 'semi-monthly') d.setDate(d.getDate() + ((i - 1) * 15)); 
+                    else d.setDate(d.getDate() + ((i - 1) * 14)); 
+                    dLbl = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                    yLbl = d.getFullYear() + (d.getMonth() / 12) + (d.getDate() / 365);
+                }
+
+                sched.push({ 
+                    period: i, year: yLbl, dateLabel: dLbl, ltv: (bal / inputs.homePrice) * 100, 
+                    payment: pPart + iPart + pEscrow + cExtra, 
+                    principal: pPart, interest: iPart, 
+                    tax: pTax, ins: pIns, hoa: pHOA, pmi: pPMI, escrow: pEscrow, 
+                    extra: cExtra, balance: bal, 
+                    totalInterest: totI, totalPrincipal: totP, totalExtra: totEx, totalEscrow: totEsc 
+                });
+            }
+            return { schedule: sched, summary: { periodsToPayoff: sched.length, periodsPerYear: perYear, totalInterest: totI, totalPrincipal: totP, totalEscrow: totEsc } };
+        };
+
+        const formatCurrency = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
+
+        // --- GSAP TEXT ANIMATION ---
+        const updateKineticText = (el, val, isCurr = true) => {
+            if (typeof val === 'string' && !isCurr) {
+                el.textContent = val;
+                gsap.fromTo(el, { scale: 1.1, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.4, ease: "back.out(2)" });
+                return;
+            }
+            let current = parseFloat(el.getAttribute('data-val'));
+            if(isNaN(current)) current = 0;
+            el.setAttribute('data-val', val);
+            let obj = { v: current };
+            gsap.to(obj, { v: val, duration: 0.6, ease: "power2.out", onUpdate: () => { el.textContent = isCurr ? formatCurrency(obj.v) : Math.round(obj.v); } });
+        };
+
+        // --- PLOTLY ENGINE WITH FLIP ---
+        const plotChart = (chartId, traces, layout, config) => {
+            const isFlipped = chartFlipState[chartId];
+            let finalTraces = traces;
+            let finalLayout = layout;
+
+            // Transpose Engine
+            if (isFlipped) {
+                finalTraces = JSON.parse(JSON.stringify(traces));
+                finalLayout = JSON.parse(JSON.stringify(layout));
+
+                finalTraces.forEach(t => {
+                    const tempX = t.x; t.x = t.y; t.y = tempX;
+                    if (t.type === 'bar') { t.orientation = 'h'; } 
+                    else if (t.type === 'scatter') {
+                        if (t.fill === 'tozeroy') t.fill = 'tozerox';
+                        if (t.fill === 'tonexty') t.fill = 'tonextx';
+                        if (t.stackgroup) t.orientation = 'h';
+                    }
+                });
+
+                const tempXAxis = finalLayout.xaxis;
+                finalLayout.xaxis = { ...finalLayout.yaxis, title: finalLayout.yaxis?.title };
+                finalLayout.yaxis = { ...tempXAxis, title: tempXAxis?.title };
+
+                if (finalLayout.shapes) {
+                    finalLayout.shapes.forEach(s => {
+                        const tx0 = s.x0, tx1 = s.x1; s.x0 = s.y0; s.x1 = s.y1; s.y0 = tx0; s.y1 = tx1;
+                        if (s.xref === 'x' && s.yref === 'paper') { s.xref = 'paper'; s.yref = 'y'; }
+                        else if (s.xref === 'paper' && s.yref === 'y') { s.xref = 'x'; s.yref = 'paper'; }
+                    });
+                }
+            }
+            Plotly.newPlot(chartId, finalTraces, finalLayout, config);
+        };
+
+        const getBaseLayout = (title, xTitle, yTitle) => {
+            const c = state.isDark ? '#f8fafc' : '#1e293b', g = state.isDark ? '#334155' : '#e2e8f0';
+            const isMobile = window.innerWidth < 768;
+            return { 
+                title: { text: title, font: { color: c, size: 16, weight: 800 }, y: 0.98 }, 
+                paper_bgcolor: 'transparent', plot_bgcolor: 'transparent', 
+                font: { color: c, family: 'Inter, sans-serif' }, 
+                // fixedrange: true disables zooming to allow native mobile scrolling over charts
+                xaxis: { title: xTitle, gridcolor: g, showgrid: true, zeroline: false, fixedrange: true, automargin: true }, 
+                yaxis: { title: yTitle, gridcolor: g, showgrid: true, zeroline: false, fixedrange: true, automargin: true }, 
+                margin: { t: 60, r: 10, l: 40, b: 40 }, 
+                legend: { orientation: 'h', y: -0.2, x: 0.5, xanchor: 'center' }, 
+                autosize: true,
+                dragmode: false // Further prevents touch hijacking on mobile
+            };
+        };
+
+        const renderCharts = (baseData, actualData, inputs, hasStrat) => {
+            const xKey = 'year'; 
+            let termX = inputs.termYears;
+            if (inputs.startDate && baseData.schedule.length > 0) termX = baseData.schedule[0].year + inputs.termYears;
+            const termLine = { type: 'line', x0: termX, y0: 0, x1: termX, y1: 1, xref: 'x', yref: 'paper', line: { color: CONFIG.colors.interest, width: 2, dash: 'dot' } };
+
+            const p1 = actualData.schedule[0] || { principal:0, interest:0, tax:0, ins:0, hoa:0, pmi:0, extra:0 };
+            const totPITI = p1.principal + p1.interest + p1.tax + p1.ins + p1.hoa + p1.pmi + p1.extra;
+            const fs = window.innerWidth < 768 ? '18px' : '22px';
+            const tc = state.isDark ? '#fff' : '#000';
+
+            Plotly.react('monthlyPaymentCircle', [{ values: [p1.principal, p1.interest, p1.tax, p1.ins, p1.hoa, p1.pmi, p1.extra].filter(v=>v>0), labels: ['Principal', 'Interest', 'Taxes', 'Insurance', 'HOA', 'PMI', 'Extra'].filter((_,i)=>[p1.principal, p1.interest, p1.tax, p1.ins, p1.hoa, p1.pmi, p1.extra][i]>0), type: 'pie', hole: 0.75, marker: { colors: [CONFIG.colors.principal, CONFIG.colors.interest, CONFIG.colors.tax, CONFIG.colors.ins, CONFIG.colors.hoa, CONFIG.colors.pmi, CONFIG.colors.extra] }, textinfo: 'none', hovertemplate: '<b>%{label}</b><br>$%{value:,.2f}<extra></extra>' }], { showlegend: false, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', margin: {t:0, b:0, l:0, r:0}, annotations: [{ text: `<b>Total/Period</b><br><span style="font-size: ${fs}; color: ${tc}">${formatCurrency(totPITI)}</span>`, showarrow: false }] }, PLOT_CONFIG);
+            Plotly.react('paymentBreakdownCircle', [{ values: [p1.principal, p1.interest], labels: ['Principal', 'Interest'], type: 'pie', hole: 0.6, marker: { colors: [CONFIG.colors.principal, CONFIG.colors.interest] }, textinfo: 'none' }], { showlegend: false, paper_bgcolor: 'rgba(0,0,0,0)', margin: {t:0, b:0, l:0, r:0}, annotations: [{text: 'P & I Only', showarrow: false, font: { size: 14, color: tc, weight: 800 }}] }, PLOT_CONFIG);
+
+            const t3 = [{ x: baseData.schedule.map(d=>d[xKey]), y: baseData.schedule.map(d=>d.balance), name: 'Bal (Std)', type: 'scatter', fill: 'tozeroy', line: { color: CONFIG.colors.principal } }];
+            if(hasStrat) t3.push({ x: actualData.schedule.map(d=>d[xKey]), y: actualData.schedule.map(d=>d.balance), name: 'Bal (Actual)', type: 'scatter', line: { color: CONFIG.colors.extra, width: 3 } });
+            const l3 = getBaseLayout('Mortgage Balance', 'Year', '$'); l3.shapes = [termLine];
+            plotChart('chart3', t3, l3, PLOT_CONFIG);
+
+            const pAmt = actualData.schedule.length ? (actualData.schedule[0].balance + actualData.schedule[0].principal) : 0;
+            const t4 = [{ x: baseData.schedule.map(d=>d[xKey]), y: baseData.schedule.map(d=>pAmt - d.balance), name: 'Equity (Std)', type: 'scatter', line: { color: CONFIG.colors.principal } }];
+            if(hasStrat) t4.push({ x: actualData.schedule.map(d=>d[xKey]), y: actualData.schedule.map(d=>pAmt - d.balance), name: 'Equity (Actual)', type: 'scatter', line: { color: CONFIG.colors.extra } });
+            plotChart('chart4', t4, getBaseLayout('Equity Build-Up', 'Year', '$'), PLOT_CONFIG);
+
+            const t2 = [ {x: actualData.schedule.map(d=>d[xKey]), y: actualData.schedule.map(d=>d.totalInterest), name: 'Interest', stackgroup: 'one', line: { color: CONFIG.colors.interest }}, {x: actualData.schedule.map(d=>d[xKey]), y: actualData.schedule.map(d=>d.totalPrincipal), name: 'Principal', stackgroup: 'one', line: { color: CONFIG.colors.principal }} ];
+            if(inputs.usePiti) t2.push({x: actualData.schedule.map(d=>d[xKey]), y: actualData.schedule.map(d=>d.totalEscrow), name: 'Escrow', stackgroup: 'one', line: { color: CONFIG.colors.tax }});
+            plotChart('chart2', t2, getBaseLayout('Cumulative Outflow', 'Year', '$'), PLOT_CONFIG);
+
+            const aData = {};
+            actualData.schedule.forEach(d => { const y = Math.floor(d[xKey]); if(!aData[y]) aData[y] = {p:0, i:0, e:0, esc:0}; aData[y].p += d.principal; aData[y].i += d.interest; aData[y].e += d.extra; aData[y].esc += d.escrow; });
+            const yrs = Object.keys(aData);
+            const t11 = [ {x:yrs, y:yrs.map(y=>aData[y].i), name:'Interest', type:'bar', marker:{color:CONFIG.colors.interest}}, {x:yrs, y:yrs.map(y=>aData[y].p), name:'Principal', type:'bar', marker:{color:CONFIG.colors.principal}}, {x:yrs, y:yrs.map(y=>aData[y].e), name:'Extra', type:'bar', marker:{color:CONFIG.colors.extra}} ];
+            if(inputs.usePiti) t11.splice(1,0, {x:yrs, y:yrs.map(y=>aData[y].esc), name:'Escrow', type:'bar', marker:{color:CONFIG.colors.tax}});
+            plotChart('chart11', t11, Object.assign(getBaseLayout('Annual Cash Flow', 'Year', '$'), {barmode: 'stack'}), PLOT_CONFIG);
+
+            plotChart('chart6', [ {x: actualData.schedule.map(d=>d[xKey]), y: actualData.schedule.map(d=>d.interest), name: 'Int Portion', type: 'scatter', fill: 'tozeroy', line: {color: CONFIG.colors.interest}}, {x: actualData.schedule.map(d=>d[xKey]), y: actualData.schedule.map(d=>d.principal), name: 'Prin Portion', type: 'scatter', fill: 'tonexty', line: {color: CONFIG.colors.principal}} ], getBaseLayout('Payment Comp.', 'Year', '$'), PLOT_CONFIG);
+
+            const fData = actualData.schedule[actualData.schedule.length-1] || {totalInterest:0, totalEscrow:0, totalPrincipal:0, totalExtra:0};
+            const tTot = [ 
+                {x: ['Total Cost'], y: [fData.totalInterest], name: 'Interest', type: 'bar', marker: {color: CONFIG.colors.interest}}, 
+                {x: ['Total Cost'], y: [fData.totalPrincipal], name: 'Principal', type: 'bar', marker: {color: CONFIG.colors.principal}}, 
+                {x: ['Total Cost'], y: [fData.totalExtra], name: 'Extra', type: 'bar', marker: {color: CONFIG.colors.extra}} 
+            ];
+            if(inputs.usePiti) tTot.splice(1,0, {x: ['Total Cost'], y: [fData.totalEscrow], name: 'Escrow', type: 'bar', marker: {color: CONFIG.colors.tax}});
+            plotChart('chart', tTot, Object.assign(getBaseLayout('Lifetime Breakdown', '', '$'), {barmode: 'stack'}), PLOT_CONFIG);
+
+            requestAnimationFrame(() => {
+                if (inputs.usePiti) {
+                    const tLTV = [{ x: baseData.schedule.map(d=>d[xKey]), y: baseData.schedule.map(d=>d.ltv), name: 'LTV (Std)', type: 'scatter', line: { color: CONFIG.colors.principal } }];
+                    if(hasStrat) tLTV.push({ x: actualData.schedule.map(d=>d[xKey]), y: actualData.schedule.map(d=>d.ltv), name: 'LTV (Actual)', type: 'scatter', line: { color: CONFIG.colors.extra, width: 3 } });
+                    const lLTV = getBaseLayout('LTV & PMI Drop', 'Year', 'LTV (%)'); lLTV.yaxis.range = [0, Math.max(105, actualData.schedule[0]?.ltv || 100)]; lLTV.shapes = [ termLine, { type: 'line', x0: 0, y0: 80, x1: 1, y1: 80, xref: 'paper', yref: 'y', line: { color: CONFIG.colors.thresholdRed, width: 2, dash: 'dash' } } ];
+                    plotChart('chartLTV', tLTV, lLTV, PLOT_CONFIG);
+                }
+
+                if (inputs.useOppCost && hasStrat) {
+                    const ir = inputs.investRate / 100, hp = inputs.homePrice;
+                    const p1X=[], p1Y=[]; let p1Inv=0; const p1PIEx=actualData.schedule[0].principal + actualData.schedule[0].interest + actualData.schedule[0].extra; const p1PY=actualData.summary.periodsPerYear; const p1Rate=Math.pow(1+ir, 1/p1PY)-1;
+                    actualData.schedule.forEach(d => { p1X.push(d.year); p1Y.push(hp - d.balance); });
+                    let cY = p1X[p1X.length - 1]; const mY = baseData.schedule[baseData.schedule.length - 1].year;
+                    while (cY < mY) { cY += (1 / p1PY); p1Inv = (p1Inv + p1PIEx) * (1 + p1Rate); p1X.push(cY); p1Y.push(hp + p1Inv); }
+                    
+                    const p2X=[], p2Y=[]; let p2Inv=0; const p2PI=baseData.schedule[0].principal + baseData.schedule[0].interest; const p2PY=baseData.summary.periodsPerYear; const p2Rate=Math.pow(1+ir, 1/p2PY)-1;
+                    const annBud = p1PIEx * p1PY, annBase = p2PI * p2PY; const p2InvPer = Math.max(0, annBud - annBase) / p2PY;
+                    baseData.schedule.forEach(d => { p2Inv = (p2Inv + p2InvPer) * (1 + p2Rate); p2X.push(d.year); p2Y.push(hp - d.balance + p2Inv); });
+                    
+                    plotChart('chartOppCost', [ { x: p1X, y: p1Y, name: 'Pay Debt Fast', type: 'scatter', line: { color: CONFIG.colors.extra, width: 3 } }, { x: p2X, y: p2Y, name: 'Invest Extra', type: 'scatter', line: { color: CONFIG.colors.investLine, width: 3, dash: 'dot' } } ], getBaseLayout('Pay Debt vs Invest', 'Year', 'Net Worth ($)'), PLOT_CONFIG);
+                }
+
+                if (hasStrat) {
+                    const tcBase = baseData.summary.totalInterest + baseData.summary.totalEscrow, tcExt = actualData.summary.totalInterest + actualData.summary.totalEscrow;
+                    plotChart('chart9', [{ x: ['Std', 'Actual'], y: [tcBase, tcExt], type: 'bar', text: [formatCurrency(tcBase), formatCurrency(tcExt)], textposition: 'auto', marker: { color: [CONFIG.colors.interest, CONFIG.colors.extra] } }], getBaseLayout('Total Cost Comparison', '', '$'), PLOT_CONFIG);
+                    const yBase = (baseData.summary.periodsToPayoff / 12).toFixed(1), yExt = (actualData.summary.periodsToPayoff / actualData.summary.periodsPerYear).toFixed(1);
+                    plotChart('chart12', [{ x: ['Std', 'Actual'], y: [yBase, yExt], type: 'bar', text: [yBase + ' Yrs', yExt + ' Yrs'], textposition: 'auto', marker: { color: [CONFIG.colors.principal, CONFIG.colors.extra] } }], getBaseLayout('Time to Pay Off', '', 'Years'), PLOT_CONFIG);
+                }
+            });
+        };
+
+        const updateTable = (schedule, usePiti) => {
+            const tbody = document.querySelector('#amortization-table tbody');
+            els.containers.escrowTh.style.display = usePiti ? '' : 'none';
+            tbody.innerHTML = '';
+            const frag = document.createDocumentFragment();
+            schedule.forEach(row => {
+                const tr = document.createElement('tr');
+                const eTd = usePiti ? `<td style="color: #8b5cf6">${formatCurrency(row.escrow)}</td>` : '';
+                tr.innerHTML = `<td>${row.dateLabel}</td><td><strong>${formatCurrency(row.payment)}</strong></td><td>${formatCurrency(row.principal)}</td><td>${formatCurrency(row.interest)}</td>${eTd}<td>${formatCurrency(row.extra)}</td><td><strong>${formatCurrency(row.balance)}</strong></td>`;
+                frag.appendChild(tr);
+            });
+            tbody.appendChild(frag);
+        };
+
+        const validate = () => {
+            els.containers.error.style.display = 'none';
+            if (parseFloat(els.inputs.homePrice.value) <= 0) {
+                els.containers.error.textContent = "Home Price must be a positive number.";
+                els.containers.error.style.display = 'block';
+                return false;
+            }
+            return true;
+        };
+
+        const calculate = (e) => {
+            if (e) e.preventDefault();
+            if (!validate()) return;
+
+            const inputs = {
+                homePrice: parseFloat(els.inputs.homePrice.value) || 0, downPayment: parseFloat(els.inputs.downPayment.value) || 0,
+                annualRate: parseFloat(els.inputs.rate.value) || 0, amortizationYears: parseFloat(els.inputs.amortization.value) || 0,
+                termYears: parseFloat(els.inputs.term.value) || 0, compounding: els.inputs.compounding.value, frequency: els.inputs.frequency.value,
+                usePiti: els.inputs.pitiToggle.checked, taxRate: els.inputs.pitiToggle.checked ? (parseFloat(els.inputs.tax.value) || 0) : 0,
+                insRate: els.inputs.pitiToggle.checked ? (parseFloat(els.inputs.ins.value) || 0) : 0, hoaRate: els.inputs.pitiToggle.checked ? (parseFloat(els.inputs.hoa.value) || 0) : 0,
+                pmiRate: els.inputs.pitiToggle.checked ? (parseFloat(els.inputs.pmi.value) || 0) : 0, useOppCost: els.inputs.oppCostToggle.checked,
+                investRate: els.inputs.oppCostToggle.checked ? (parseFloat(els.inputs.investRate.value) || 7.0) : 7.0,
+                extraPayment: parseFloat(els.inputs.extra.value) || 0, startDate: els.inputs.date.value
+            };
+
+            updateKineticText(els.results.mortgageDisplay, inputs.homePrice - inputs.downPayment);
+            els.results.truePaymentLabel.textContent = inputs.usePiti ? "True Periodic Payment (PITI)" : "Periodic Payment (P & I)";
+
+            const hasStrat = inputs.extraPayment > 0 || inputs.frequency !== 'monthly';
+            els.containers.ltv.style.display = inputs.usePiti ? 'block' : 'none';
+            els.containers.oppCost.style.display = (inputs.useOppCost && hasStrat) ? 'block' : 'none';
+            els.containers.comparison.style.display = hasStrat ? 'block' : 'none';
+
+            const baseData = generateSchedule(inputs, true), actData = generateSchedule(inputs, false);
+            const yrs = Math.floor(actData.summary.periodsToPayoff / actData.summary.periodsPerYear), rem = actData.summary.periodsToPayoff % actData.summary.periodsPerYear;
+            
+            updateKineticText(els.results.paidOffIn, `${yrs} yrs, ${rem} ${inputs.frequency.includes('bi') ? "periods" : "months"}`, false);
+            
+            const termPer = Math.ceil(inputs.termYears * actData.summary.periodsPerYear);
+            updateKineticText(els.results.termBalance, termPer < actData.schedule.length ? actData.schedule[Math.max(0, termPer - 1)].balance : 0);
+            updateKineticText(els.results.saved, (baseData.summary.totalInterest + baseData.summary.totalEscrow) - (actData.summary.totalInterest + actData.summary.totalEscrow));
+
+            renderCharts(baseData, actData, inputs, hasStrat);
+            updateTable(actData.schedule, inputs.usePiti);
+        };
+
+        const initAnimations = () => {
+            gsap.from(".gsap-fade-in", { y: -20, opacity: 0, duration: 0.8, ease: "power3.out" });
+            gsap.from(".gsap-slide-up", { y: 40, opacity: 0, duration: 0.8, stagger: 0.1, ease: "back.out(1.5)" });
+        };
+
+        // Listeners
+        els.modeSwitch.addEventListener('change', (e) => { state.isDark = e.target.checked; document.body.classList.toggle('dark-mode', state.isDark); calculate(); });
+        els.inputs.pitiToggle.addEventListener('change', (e) => { els.containers.pitiSection.style.display = e.target.checked ? 'block' : 'none'; calculate(); });
+        els.inputs.oppCostToggle.addEventListener('change', (e) => { els.containers.oppCostSection.style.display = e.target.checked ? 'block' : 'none'; calculate(); });
+        document.getElementById('clearBtn').addEventListener('click', () => { els.form.reset(); calculate(); });
+        els.form.addEventListener('submit', calculate);
+        
+        Object.values(els.inputs).forEach(inp => {
+            if(inp && !['includePitiToggle', 'oppCostToggle'].includes(inp.id)) {
+                inp.addEventListener('blur', calculate);
+                if(inp.tagName === 'SELECT') inp.addEventListener('change', calculate);
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!els.inputs.date.value) {
+                const nextM = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
+                els.inputs.date.value = `${nextM.getFullYear()}-${String(nextM.getMonth() + 1).padStart(2, '0')}-${String(nextM.getDate()).padStart(2, '0')}`;
+            }
+            
+            // Flip Button Handlers
+            document.querySelectorAll('.flip-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const cId = e.target.getAttribute('data-chart');
+                    chartFlipState[cId] = !chartFlipState[cId];
+                    gsap.fromTo(e.target, { scale: 0.9 }, { scale: 1, duration: 0.3, ease: "back.out(2)" });
+                    calculate(); // Retrigger the render pipeline to paint the transposed chart
+                });
+            });
+
+            document.body.classList.toggle('dark-mode', state.isDark);
+            calculate();
+            initAnimations();
+        });
+    </script>
+</body>
+</html>
