@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>World-Class Mortgage Calculator</title>
+    <title>World-Class Debt & Mortgage Calculator</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
     
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
@@ -11,10 +11,7 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
 
-        /* GLOBAL FIX: Prevents padding from breaking the screen width */
-        *, *::before, *::after {
-            box-sizing: border-box;
-        }
+        *, *::before, *::after { box-sizing: border-box; }
 
         :root {
             --bg-color: #f0f2f5;
@@ -41,42 +38,41 @@
         }
 
         html, body {
-            overflow-x: hidden; /* Absolutely prevents horizontal scrolling */
-            width: 100%;
-            max-width: 100vw;
-            margin: 0; 
-            padding: 0;
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            transition: background-color 0.3s ease, color 0.3s ease;
-            -webkit-tap-highlight-color: transparent; 
+            overflow-x: hidden; width: 100%; max-width: 100vw; margin: 0; padding: 0;
+            font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-color);
+            transition: background-color 0.3s ease, color 0.3s ease; -webkit-tap-highlight-color: transparent; 
         }
 
         .container { width: 100%; max-width: 1400px; margin: 0 auto; padding: 30px 20px; }
-        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; flex-wrap: wrap; gap: 20px;}
         h1, h2, h3 { font-weight: 800; margin: 0; letter-spacing: -0.02em; }
         .section-title { margin: 0 0 15px 0; color: var(--primary-color); font-size: 1.15rem; }
 
-        /* Layout Grid */
+        /* Main Mode Switcher */
+        .master-mode-selector {
+            display: flex; background: var(--card-bg); border-radius: 20px; padding: 6px; box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+        .mode-btn {
+            padding: 12px 24px; border: none; background: transparent; color: var(--text-color); font-weight: 700;
+            border-radius: 14px; cursor: pointer; transition: all 0.3s var(--spring-easing); opacity: 0.6;
+        }
+        .mode-btn.active { background: var(--primary-color); color: white; opacity: 1; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+
         .dashboard-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; width: 100%; }
         .full-width-section { grid-column: 1 / -1; margin-top: 24px; width: 100%; }
         .column { display: flex; flex-direction: column; gap: 24px; width: 100%; min-width: 0; }
 
-        /* Bento Cards */
         .bento-card {
             background-color: var(--card-bg); padding: 28px; border-radius: 28px;
             box-shadow: var(--shadow); border: 1px solid rgba(255, 255, 255, 0.05);
             transition: transform 0.4s var(--spring-easing), box-shadow 0.4s var(--spring-easing), background-color 0.3s ease;
-            width: 100%; overflow: hidden; /* Keeps internal elements contained */
+            width: 100%; overflow: hidden;
         }
 
-        @media (hover: hover) and (pointer: fine) {
-            .squishy-interactive:hover { transform: scale(1.015) translateY(-2px); box-shadow: var(--shadow-hover); }
-        }
+        @media (hover: hover) and (pointer: fine) { .squishy-interactive:hover { transform: scale(1.015) translateY(-2px); box-shadow: var(--shadow-hover); } }
         .squishy-interactive:active { transform: scale(0.98); }
         
-        /* Toggles */
         .mode-toggle { display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600;}
         .switch { position: relative; display: inline-block; width: 52px; height: 28px; flex-shrink: 0; }
         .switch input { opacity: 0; width: 0; height: 0; }
@@ -90,26 +86,20 @@
         .small-switch input:checked + .slider:before { transform: translateX(20px); }
         .section-header-with-toggle { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
 
-        /* Inputs */
         .input-group-row { display: flex; gap: 16px; margin-bottom: 16px; width: 100%; }
         .input-group { flex: 1; min-width: 0; display: flex; flex-direction: column; }
         .input-group label { display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; color: var(--text-color); opacity: 0.9;}
         .tooltip { font-size: 0.75rem; color: #888; font-weight: 400;}
 
         input, .custom-select {
-            width: 100%; padding: 16px; border: 2px solid transparent;
-            border-radius: 14px; background-color: var(--input-bg);
-            color: var(--text-color); font-size: 1rem; font-weight: 600;
-            transition: all 0.3s ease; -webkit-appearance: none; 
-            height: 52px; 
+            width: 100%; padding: 16px; border: 2px solid transparent; border-radius: 14px; background-color: var(--input-bg);
+            color: var(--text-color); font-size: 1rem; font-weight: 600; transition: all 0.3s ease; -webkit-appearance: none; height: 52px; 
         }
         input:focus, .custom-select:focus { outline: none; border-color: var(--primary-color); background-color: var(--card-bg); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1); }
 
-        /* Buttons */
         .btn-group { display: flex; gap: 16px; margin-top: 10px; width: 100%; }
         .squishy-btn {
-            flex: 1; padding: 18px; border: none; border-radius: 16px;
-            font-size: 1.1rem; font-weight: 700; cursor: pointer;
+            flex: 1; padding: 18px; border: none; border-radius: 16px; font-size: 1.1rem; font-weight: 700; cursor: pointer;
             transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease;
         }
         .primary-btn { background-color: var(--primary-color); color: white; }
@@ -120,28 +110,34 @@
             .secondary-btn:hover { background-color: var(--border-color); transform: translateY(-2px); }
         }
 
-        /* Stats & Visuals */
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; width: 100%; }
-        .stat-box { background: var(--input-bg); padding: 20px; border-radius: 20px; text-align: center; width: 100%; }
+        
+        .stat-box { 
+            background: var(--input-bg); padding: 16px; border-radius: 20px; text-align: center; width: 100%; 
+            position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: center;
+            container-type: inline-size; 
+        }
         .stat-box label { font-size: 0.85rem; font-weight: 700; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.05em; }
-        .kinetic-text { font-size: 1.6rem; font-weight: 800; margin-top: 8px; font-variant-numeric: tabular-nums; word-break: break-word; }
+        
+        .kinetic-text { 
+            font-size: clamp(1rem, 12cqw, 1.6rem); 
+            font-weight: 800; margin-top: 8px; 
+            font-variant-numeric: tabular-nums; 
+            white-space: nowrap; 
+        }
+        
         .highlight-box { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); }
         .highlight-text { color: var(--accent-color); }
+        
+        .danger-box { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); }
+        .danger-text { color: var(--danger-color); }
 
-        /* Fluid Pies */
         .circles-container { display: flex; flex-direction: column; align-items: center; gap: 24px; width: 100%; }
         .circle-wrapper { width: 100%; display: flex; flex-direction: column; align-items: center; background: var(--input-bg); padding: 20px; border-radius: 20px; }
         .circle-wrapper span { display: block; margin-top: 15px; font-weight: 700; font-size: 0.95rem; text-align: center; }
         .true-payment-circle { width: 100%; max-width: 240px; aspect-ratio: 1; }
         .payment-breakdown-circle { width: 100%; max-width: 180px; aspect-ratio: 1; }
 
-        /* Concentric Comparison Visual */
-        .concentric-comparison-container { width: 100%; display: flex; flex-direction: column; align-items: center; background: rgba(11, 17, 33, 0.4); border-radius: 22px; padding: 25px; margin-bottom: 24px;}
-        body.dark-mode .concentric-comparison-container { background: rgba(11, 17, 33, 0.7); }
-        .circles-row { width: 100%; display: flex; justify-content: center; gap: 40px; align-items: center; position: relative; min-height: 160px;}
-        .circle-label { font-size: 0.85rem; font-weight: 700; color: var(--text-color); text-align: center; max-width: 120px; line-height: 1.3; margin-top: 10px;}
-        
-        /* New Concentric Concentric Stacked Logic */
         .concentric-visualization-card { display: flex; flex-direction: column; align-items: center; padding: 25px; margin-bottom: 24px; border-radius: 22px; background-color: var(--card-bg); width: 100%; box-shadow: var(--shadow);}
         .dynamic-concentric-stack { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 300px; }
         .dynamic-concentric-stack span { margin-top: 10px;}
@@ -149,7 +145,6 @@
         .blueprint-label { position: absolute; left: 0; bottom: 0; font-weight: 800; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;}
         .cost-label { position: absolute; right: 0; bottom: 0; font-weight: 800; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;}
 
-        /* Charts */
         .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100%, 1fr)); gap: 24px; width: 100%; }
         @media (min-width: 900px) { .charts-grid { grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); } }
         
@@ -157,7 +152,6 @@
         .plotly-container { width: 100%; height: 100%; min-height: 350px; }
         .modebar { display: none !important; }
 
-        /* Table */
         .table-responsive { width: 100%; overflow-x: auto; max-height: 500px; border-radius: 14px; border: 1px solid var(--border-color); margin-top: 15px; -webkit-overflow-scrolling: touch; }
         table { width: 100%; border-collapse: collapse; min-width: 600px; }
         th, td { padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--border-color); font-variant-numeric: tabular-nums; font-size: 0.9rem; }
@@ -165,47 +159,46 @@
         
         #error-message { background-color: var(--danger-color); color: white; padding: 15px; border-radius: 14px; margin-bottom: 20px; text-align: center; font-weight: 600; display: none;}
 
-        /* --- EXTREME MOBILE OPTIMIZATION --- */
+        /* Logic specific hiding classes */
+        .mortgage-only { display: flex; }
+        .cc-only { display: none; }
+        .mode-cc .mortgage-only { display: none !important; }
+        .mode-cc .cc-only { display: flex !important; }
+
         @media (max-width: 768px) {
             .container { padding: 15px 10px; overflow-x: hidden; }
-            header { flex-direction: column; align-items: stretch; gap: 15px; margin-bottom: 20px; width: 100%; }
+            header { flex-direction: column; align-items: center; gap: 15px; margin-bottom: 20px; width: 100%; }
             header h1 { font-size: 1.6rem; text-align: center; }
-            .mode-toggle { justify-content: space-between; width: 100%; background: var(--card-bg); padding: 12px 16px; border-radius: 16px; box-shadow: var(--shadow); }
+            .master-mode-selector { width: 100%; justify-content: center; }
+            .mode-btn { flex: 1; text-align: center; padding: 10px 12px; font-size: 0.9rem; }
+            .mode-toggle { width: 100%; justify-content: center; background: var(--card-bg); padding: 12px 16px; border-radius: 16px; box-shadow: var(--shadow); }
             
             .dashboard-layout { grid-template-columns: 1fr; gap: 16px; width: 100%; }
             .bento-card { padding: 16px; border-radius: 20px; width: 100%; }
-            
             .input-group-row { flex-direction: column; gap: 16px; margin-bottom: 16px; }
             .btn-group { flex-direction: column; width: 100%; }
-            
             .stats-grid { grid-template-columns: 1fr; gap: 12px; width: 100%; }
             .stat-box { padding: 15px; width: 100%; }
-            .kinetic-text { font-size: 1.4rem; }
             
-            .circles-row { gap: 20px; min-height: 120px; }
-            .circle-label { font-size: 0.75rem;}
             .true-payment-circle { max-width: 200px; }
-            .concentric-comparison-container { padding: 15px; }
             .dynamic-concentric-stack { max-width: 240px; }
-            .stack-wrapper { aspect-ratio: 1.15; } /* Slight vertically elongated feel on mobile for label fit */
+            .stack-wrapper { aspect-ratio: 1.15; }
             .cost-label, .blueprint-label { font-size: 0.6rem; }
-
             .chart-wrapper { padding: 5px; min-height: 320px; border-radius: 16px; }
             .plotly-container { min-height: 300px; }
         }
-        
-        @media print {
-            body { background-color: white; color: black; }
-            header, .bento-card form, .btn-group { display: none; }
-            .bento-card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; margin-bottom: 20px; }
-            .dashboard-layout { display: block; }
-        }
     </style>
 </head>
-<body>
+<body class="mode-mortgage">
     <div class="container">
         <header class="gsap-fade-in">
-            <h1>Mortgage Calculator</h1>
+            <h1>Debt Strategy Engine</h1>
+            
+            <div class="master-mode-selector">
+                <button class="mode-btn active" data-mode="mortgage">Mortgage</button>
+                <button class="mode-btn" data-mode="cc">Credit Card</button>
+            </div>
+
             <div class="mode-toggle squishy-interactive">
                 <label for="mode-switch">Dark Mode</label>
                 <label class="switch">
@@ -223,31 +216,46 @@
                 <form id="mortgageForm" autocomplete="off">
                     
                     <div class="bento-card form-card">
-                        <h3 class="section-title">Property & Loan</h3>
+                        <h3 class="section-title mortgage-only">Property & Loan</h3>
+                        <h3 class="section-title cc-only">Revolving Debt</h3>
+                        
                         <div class="input-group-row">
-                            <div class="input-group">
+                            <div class="input-group mortgage-only">
                                 <label>Home Price ($)</label>
-                                <input type="number" id="homePrice" inputmode="decimal" required value="850000" step="1000" min="0">
+                                <input type="number" id="homePrice" inputmode="decimal" value="850000" step="1000" min="0">
                             </div>
-                            <div class="input-group">
+                            <div class="input-group mortgage-only">
                                 <label>Down Payment ($)</label>
-                                <input type="number" id="downPayment" inputmode="decimal" required value="0" step="1000" min="0">
+                                <input type="number" id="downPayment" inputmode="decimal" value="0" step="1000" min="0">
+                            </div>
+                            <div class="input-group cc-only">
+                                <label>Current Balance ($)</label>
+                                <input type="number" id="ccBalance" inputmode="decimal" value="15000" step="100" min="0">
                             </div>
                         </div>
+                        
                         <div class="input-group-row">
                             <div class="input-group">
-                                <label>Interest Rate (%)</label>
+                                <label>Interest Rate (APR %)</label>
                                 <input type="number" id="interestRate" inputmode="decimal" step="0.01" required value="2.62" min="0">
                             </div>
-                            <div class="input-group">
+                            <div class="input-group mortgage-only">
                                 <label>Amortization (Yrs)</label>
-                                <input type="number" id="amortization" inputmode="decimal" required value="25" step="any" min="0.1">
+                                <input type="number" id="amortization" inputmode="decimal" value="25" step="any" min="0.1">
+                            </div>
+                            <div class="input-group cc-only">
+                                <label>Province <span class="tooltip">(Min. Payment Law)</span></label>
+                                <select id="province" class="custom-select">
+                                    <option value="ON">Ontario (Standard 3%)</option>
+                                    <option value="QC">Quebec (Legal 5%)</option>
+                                </select>
                             </div>
                         </div>
-                        <div class="input-group-row">
+
+                        <div class="input-group-row mortgage-only">
                             <div class="input-group">
                                 <label>Term Length (Yrs)</label>
-                                <input type="number" id="term" inputmode="decimal" required value="5" step="any" min="0.1">
+                                <input type="number" id="term" inputmode="decimal" value="5" step="any" min="0.1">
                             </div>
                             <div class="input-group">
                                 <label>Compounding</label>
@@ -260,6 +268,52 @@
                     </div>
 
                     <div class="bento-card form-card" style="margin-top: 24px;">
+                        <h3 class="section-title">Aggressive Strategy</h3>
+                        <div class="input-group-row mortgage-only">
+                            <div class="input-group">
+                                <label>Payment Frequency</label>
+                                <select id="paymentFrequency" class="custom-select">
+                                    <option value="monthly">Monthly</option>
+                                    <option value="semi-monthly">Semi-Monthly (24/yr)</option>
+                                    <option value="bi-weekly">Bi-Weekly (26/yr)</option>
+                                    <option value="accelerated-biweekly">Accelerated Bi-Weekly</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="input-group-row">
+                            <div class="input-group">
+                                <label class="mortgage-only">Extra Payment Surplus ($)</label>
+                                <label class="cc-only">Monthly Surplus ($) <span class="tooltip">Above Minimum</span></label>
+                                <input type="number" id="extraPayment" inputmode="decimal" required value="0" step="50" min="0">
+                            </div>
+                        </div>
+                        <div class="input-group-row">
+                            <div class="input-group">
+                                <label>Start Date</label>
+                                <input type="date" id="firstPaymentDate">
+                            </div>
+                        </div>
+
+                        <div class="section-header-with-toggle" style="margin-top: 20px;">
+                            <h3 class="section-title" style="margin:0; font-size: 0.95rem;">Opportunity Cost</h3>
+                            <div class="toggle-wrapper" title="Compare paying off vs investing">
+                                <label class="switch small-switch">
+                                    <input type="checkbox" id="oppCostToggle">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div id="oppCostSection" style="display: none; margin-top: 15px;">
+                            <div class="input-group-row">
+                                <div class="input-group">
+                                    <label>Expected Investment Return (%/yr)</label>
+                                    <input type="number" id="investRate" inputmode="decimal" value="7.0" step="0.1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bento-card form-card mortgage-only" style="margin-top: 24px;">
                         <div class="section-header-with-toggle">
                             <h3 class="section-title" style="margin:0;">Taxes & Insurance</h3>
                             <div class="toggle-wrapper" title="Include Escrow (PITI)">
@@ -293,52 +347,9 @@
                         </div>
                     </div>
 
-                    <div class="bento-card form-card" style="margin-top: 24px;">
-                        <h3 class="section-title">Repayment Strategy</h3>
-                        <div class="input-group-row">
-                            <div class="input-group">
-                                <label>Payment Frequency</label>
-                                <select id="paymentFrequency" class="custom-select">
-                                    <option value="monthly">Monthly</option>
-                                    <option value="semi-monthly">Semi-Monthly (24/yr)</option>
-                                    <option value="bi-weekly">Bi-Weekly (26/yr)</option>
-                                    <option value="accelerated-biweekly">Accelerated Bi-Weekly</option>
-                                </select>
-                            </div>
-                            <div class="input-group">
-                                <label>Extra Payment ($)</label>
-                                <input type="number" id="extraPayment" inputmode="decimal" required value="0" step="50" min="0">
-                            </div>
-                        </div>
-                        <div class="input-group-row">
-                            <div class="input-group">
-                                <label>Start Date</label>
-                                <input type="date" id="firstPaymentDate">
-                            </div>
-                        </div>
-
-                        <div class="section-header-with-toggle" style="margin-top: 20px;">
-                            <h3 class="section-title" style="margin:0; font-size: 0.95rem;">Opportunity Cost</h3>
-                            <div class="toggle-wrapper" title="Compare paying off vs investing">
-                                <label class="switch small-switch">
-                                    <input type="checkbox" id="oppCostToggle">
-                                    <span class="slider"></span>
-                                </label>
-                            </div>
-                        </div>
-                        <div id="oppCostSection" style="display: none; margin-top: 15px;">
-                            <div class="input-group-row">
-                                <div class="input-group">
-                                    <label>Investment Return (%/yr)</label>
-                                    <input type="number" id="investRate" inputmode="decimal" value="7.0" step="0.1">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                     <div class="btn-group">
                         <button type="button" id="clearBtn" class="squishy-btn secondary-btn">Reset</button>
-                        <button type="submit" id="calcBtn" class="squishy-btn primary-btn">Calculate</button>
+                        <button type="submit" id="calcBtn" class="squishy-btn primary-btn">Calculate Strategy</button>
                     </div>
                 </form>
             </div>
@@ -346,32 +357,34 @@
             <div class="column gsap-slide-up" style="animation-delay: 0.1s;">
                 
                 <div class="concentric-visualization-card">
-                    <h3 class="section-title">Visualized: Original Principal vs Lifetime Cost</h3>
+                    <h3 class="section-title">The Gravity of the Debt</h3>
                     <div class="dynamic-concentric-stack">
                         <div class="stack-wrapper">
                             <svg viewBox="0 0 100 100" class="concentric-svg-comparison" style="width: 100%; height: 100%;">
                                 <circle id="concentric-outer" cx="50" cy="50" r="0" fill="#ef4444" opacity="0.15"></circle>
                                 <circle id="concentric-border" cx="50" cy="50" r="0" stroke="#ef4444" stroke-width="0.5" fill="none" opacity="0.3"></circle>
-                                
-                                <circle cx="50" cy="50" r="30" fill="#2563eb"></circle>
-                                
-                                <text x="50" y="52" text-anchor="middle" font-size="7" font-weight="800" fill="white" id="concentric-center-val">$0</text>
+                                <circle cx="50" cy="50" r="20" fill="#2563eb"></circle>
+                                <text x="50" y="52" text-anchor="middle" font-size="6" font-weight="800" fill="white" id="concentric-center-val">$0</text>
                             </svg>
-                            <div class="blueprint-label" style="color: #2563eb">Original blueprint</div>
-                            <div class="cost-label" style="color: #ef4444">Bank markup</div>
+                            <div class="blueprint-label" style="color: #2563eb" id="inner-circle-label">Principal</div>
+                            <div class="cost-label" style="color: #ef4444">Bank Markup</div>
                         </div>
-                        <span id="truePaymentLabel">Actual Total amount paid to the bank</span>
+                        <span id="truePaymentLabel">Actual Lifetime Paid</span>
                     </div>
                 </div>
 
                 <div class="bento-card">
-                    <h3 class="section-title">Loan Summary</h3>
+                    <h3 class="section-title">Financial Summary</h3>
                     <div class="stats-grid">
                         <div class="stat-box squishy-interactive">
-                            <label>Mortgage Amount</label>
+                            <label id="summaryBalLabel">Original Debt</label>
                             <div class="kinetic-text" id="mortgageAmountDisplay" data-val="0">$0.00</div>
                         </div>
-                        <div class="stat-box squishy-interactive">
+                        <div class="stat-box danger-box squishy-interactive cc-only" style="display: none;">
+                            <label class="danger-text">Daily Vampire Drain</label>
+                            <div class="kinetic-text danger-text" id="dailyVampireDrain" data-val="0">$0.00</div>
+                        </div>
+                        <div class="stat-box squishy-interactive mortgage-only">
                             <label>Balance at Term End</label>
                             <div class="kinetic-text" id="balanceAtTerm" data-val="0">$0.00</div>
                         </div>
@@ -380,19 +393,19 @@
                             <div class="kinetic-text" id="paidOffIn">0 yrs</div>
                         </div>
                         <div class="stat-box highlight-box squishy-interactive">
-                            <label>Total Savings</label>
+                            <label>Interest Saved (vs Minimums)</label>
                             <div class="kinetic-text highlight-text" id="extraSavedTotal" data-val="0">$0.00</div>
                         </div>
                     </div>
 
                     <div class="circles-container">
-                        <div class="circle-wrapper squishy-interactive">
+                        <div class="circle-wrapper squishy-interactive mortgage-only">
                             <div class="true-payment-circle" id="monthlyPaymentCircle"></div>
-                            <span id="truePaymentLabel">True Periodic Payment (P & I)</span>
+                            <span id="monthlyPaymentLabel">Periodic Payment Comp</span>
                         </div>
                         <div class="circle-wrapper squishy-interactive">
                             <div class="payment-breakdown-circle" id="paymentBreakdownCircle"></div>
-                            <span>Principal vs. Interest Ratio</span>
+                            <span>First Month: Principal vs. Interest</span>
                         </div>
                     </div>
                 </div>
@@ -408,7 +421,7 @@
                         <div class="chart-wrapper chart-box squishy-interactive">
                             <div id="chart" class="plotly-container"></div>
                         </div>
-                        <div class="chart-wrapper chart-box squishy-interactive">
+                        <div class="chart-wrapper chart-box squishy-interactive mortgage-only">
                             <div id="chart4" class="plotly-container"></div>
                         </div>
                         <div class="chart-wrapper chart-box squishy-interactive">
@@ -420,12 +433,6 @@
                         <div class="chart-wrapper chart-box squishy-interactive">
                             <div id="chart6" class="plotly-container"></div>
                         </div>
-                    </div>
-                </div>
-
-                <div id="ltv-container" class="bento-card" style="display: none;">
-                    <div class="chart-wrapper chart-box squishy-interactive">
-                        <div id="chartLTV" class="plotly-container"></div>
                     </div>
                 </div>
 
@@ -480,12 +487,13 @@
         };
 
         const PLOT_CONFIG = { responsive: true, displayModeBar: false };
-        let state = { isDark: true };
+        let state = { isDark: true, currentMode: 'mortgage' };
 
         const els = {
             form: document.getElementById('mortgageForm'),
             inputs: {
                 homePrice: document.getElementById('homePrice'), downPayment: document.getElementById('downPayment'),
+                ccBalance: document.getElementById('ccBalance'), province: document.getElementById('province'),
                 rate: document.getElementById('interestRate'), amortization: document.getElementById('amortization'),
                 term: document.getElementById('term'), compounding: document.getElementById('compounding'),
                 frequency: document.getElementById('paymentFrequency'), pitiToggle: document.getElementById('includePitiToggle'),
@@ -495,25 +503,26 @@
                 extra: document.getElementById('extraPayment'), date: document.getElementById('firstPaymentDate')
             },
             results: {
-                mortgageDisplay: document.getElementById('mortgageAmountDisplay'), monthly: document.getElementById('monthlyPaymentCircle'), 
-                breakdown: document.getElementById('paymentBreakdownCircle'), termBalance: document.getElementById('balanceAtTerm'),
+                mortgageDisplay: document.getElementById('mortgageAmountDisplay'),
+                vampireDrain: document.getElementById('dailyVampireDrain'),
+                monthly: document.getElementById('monthlyPaymentCircle'), 
+                breakdown: document.getElementById('paymentBreakdownCircle'), 
+                termBalance: document.getElementById('balanceAtTerm'),
                 paidOffIn: document.getElementById('paidOffIn'), saved: document.getElementById('extraSavedTotal'),
-                truePaymentLabel: document.getElementById('truePaymentLabel'),
-                concentricStack: document.querySelector('.concentric-visualization-card') // The dynamic Concentric visual
+                concentricStack: document.querySelector('.concentric-visualization-card')
             },
             containers: {
                 pitiSection: document.getElementById('pitiSection'), oppCostSection: document.getElementById('oppCostSection'),
                 comparison: document.getElementById('comparison-container'), error: document.getElementById('error-message'),
-                escrowTh: document.getElementById('escrowTh'), ltv: document.getElementById('ltv-container'),
-                oppCost: document.getElementById('oppcost-container')
+                escrowTh: document.getElementById('escrowTh'), oppCost: document.getElementById('oppcost-container')
             },
-            modeSwitch: document.getElementById('mode-switch')
+            modeSwitch: document.getElementById('mode-switch'),
+            masterBtns: document.querySelectorAll('.mode-btn')
         };
 
-        // --- MATH ENGINE ---
         const getMonthlyPayment = (p, rate, n) => rate === 0 ? p / n : p * (rate * Math.pow(1 + rate, n)) / (Math.pow(1 + rate, n) - 1);
 
-        const generateSchedule = (inputs, isBaseline = false) => {
+        const generateMortgageSchedule = (inputs, isBaseline = false) => {
             const principal = inputs.homePrice - inputs.downPayment;
             let stdRate = (inputs.compounding === 'semi') ? Math.pow(1 + (inputs.annualRate / 100 / 2), 1 / 6) - 1 : (inputs.annualRate / 100 / 12);
             const basePI = getMonthlyPayment(principal, stdRate, inputs.amortizationYears * 12);
@@ -534,7 +543,7 @@
             const pmiDrop = inputs.homePrice * 0.80; 
 
             let bal = principal, totI = 0, totP = 0, totEx = 0, totEsc = 0, sched = [];
-            let cDate = inputs.startDate ? new Date(inputs.startDate) : null;
+            let cDate = inputs.startDate ? new Date(inputs.startDate + "T00:00:00") : null; 
             const maxP = Math.ceil(inputs.amortizationYears * perYear) + (perYear * 5); 
 
             for (let i = 1; i <= maxP; i++) {
@@ -557,7 +566,7 @@
 
                 let dLbl = `P${i}`, yLbl = (i / perYear);
                 if (cDate) {
-                    const d = new Date(cDate.getTime() + Math.abs(cDate.getTimezoneOffset() * 60000));
+                    const d = new Date(cDate.getTime());
                     if (freq === 'monthly') d.setMonth(d.getMonth() + (i - 1));
                     else if (freq === 'semi-monthly') d.setDate(d.getDate() + ((i - 1) * 15)); 
                     else d.setDate(d.getDate() + ((i - 1) * 14)); 
@@ -567,20 +576,71 @@
 
                 sched.push({ 
                     period: i, year: yLbl, dateLabel: dLbl, ltv: (bal / inputs.homePrice) * 100, 
-                    payment: pPart + iPart + pEscrow + cExtra, 
-                    principal: pPart, interest: iPart, 
-                    tax: pTax, ins: pIns, hoa: pHOA, pmi: pPMI, escrow: pEscrow, 
-                    extra: cExtra, balance: bal, 
+                    payment: pPart + iPart + pEscrow + cExtra, principal: pPart, interest: iPart, 
+                    tax: pTax, ins: pIns, hoa: pHOA, pmi: pPMI, escrow: pEscrow, extra: cExtra, balance: bal, 
                     totalInterest: totI, totalPrincipal: totP, totalExtra: totEx, totalEscrow: totEsc 
                 });
             }
             return { schedule: sched, summary: { periodsToPayoff: sched.length, periodsPerYear: perYear, totalInterest: totI, totalPrincipal: totP, totalEscrow: totEsc } };
         };
 
-        const formatCurrency = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
+        const generateCCSchedule = (inputs, isBaseline = false) => {
+            const principal = inputs.ccBalance;
+            const dailyRate = (inputs.annualRate / 100) / 365;
+            const daysInMonth = 365 / 12;
+            const monthlyRate = Math.pow(1 + dailyRate, daysInMonth) - 1; 
+            
+            const provPct = inputs.province === 'QC' ? 0.05 : 0.03;
+            const userExtra = isBaseline ? 0 : inputs.extraPayment;
+            
+            let bal = principal, totI = 0, totP = 0, totEx = 0, sched = [];
+            let cDate = inputs.startDate ? new Date(inputs.startDate + "T00:00:00") : null;
+            const maxMonths = 600; 
+            
+            for(let i=1; i<=maxMonths; i++) {
+                if (bal <= 0.01) break;
+                
+                let iPart = bal * monthlyRate;
+                
+                let calcMin = Math.max(10, bal * provPct, iPart + (bal * 0.01));
+                if (calcMin > bal + iPart) calcMin = bal + iPart;
+                
+                let cExtra = userExtra;
+                let totalActualPayment = calcMin + cExtra;
+                if (totalActualPayment > bal + iPart) {
+                    totalActualPayment = bal + iPart;
+                    cExtra = totalActualPayment - calcMin;
+                    if(cExtra < 0) cExtra = 0;
+                }
+                
+                let pPart = totalActualPayment - iPart;
+                bal -= pPart;
+                if(bal < 0.01) bal = 0;
+                
+                totI += iPart; totP += (pPart - cExtra); totEx += cExtra;
+                
+                let dLbl = `M${i}`, yLbl = (i / 12);
+                if (cDate) {
+                    const d = new Date(cDate.getTime());
+                    d.setMonth(d.getMonth() + (i - 1));
+                    dLbl = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                    yLbl = d.getFullYear() + (d.getMonth() / 12) + (d.getDate() / 365);
+                }
 
-        // --- GSAP TEXT ANIMATION ---
-        const updateKineticText = (el, val, isCurr = true) => {
+                sched.push({
+                    period: i, year: yLbl, dateLabel: dLbl, ltv: 0,
+                    payment: totalActualPayment, principal: pPart - cExtra, interest: iPart,
+                    tax: 0, ins: 0, hoa: 0, pmi: 0, escrow: 0, extra: cExtra, balance: bal,
+                    totalInterest: totI, totalPrincipal: totP, totalExtra: totEx, totalEscrow: 0
+                });
+            }
+            return { schedule: sched, summary: { periodsToPayoff: sched.length, periodsPerYear: 12, totalInterest: totI, totalPrincipal: totP, totalEscrow: 0 } };
+        };
+
+        const formatCurrency = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
+        const formatDecimal = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+
+        const updateKineticText = (el, val, isCurr = true, decimal = false) => {
             if (typeof val === 'string' && !isCurr) {
                 el.textContent = val;
                 gsap.fromTo(el, { scale: 1.1, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.4, ease: "back.out(2)" });
@@ -590,58 +650,72 @@
             if(isNaN(current)) current = 0;
             el.setAttribute('data-val', val);
             let obj = { v: current };
-            gsap.to(obj, { v: val, duration: 0.6, ease: "power2.out", onUpdate: () => { el.textContent = isCurr ? formatCurrency(obj.v) : Math.round(obj.v); } });
+            gsap.to(obj, { v: val, duration: 0.6, ease: "power2.out", onUpdate: () => { el.textContent = isCurr ? (decimal ? formatDecimal(obj.v) : formatCurrency(obj.v)) : Math.round(obj.v); } });
         };
 
         const getBaseLayout = (title, xTitle, yTitle) => {
             const c = state.isDark ? '#f8fafc' : '#1e293b', g = state.isDark ? '#334155' : '#e2e8f0';
             return { 
                 title: { text: title, font: { color: c, size: 16, weight: 800 }, y: 0.98 }, 
-                paper_bgcolor: 'transparent', plot_bgcolor: 'transparent', 
-                font: { color: c, family: 'Inter, sans-serif' }, 
-                // fixedrange: true disables Plotly pinch-to-zoom on mobile, allowing normal page scrolling
+                paper_bgcolor: 'transparent', plot_bgcolor: 'transparent', font: { color: c, family: 'Inter, sans-serif' }, 
                 xaxis: { title: xTitle, gridcolor: g, showgrid: true, zeroline: false, fixedrange: true }, 
                 yaxis: { title: yTitle, gridcolor: g, showgrid: true, zeroline: false, fixedrange: true }, 
-                margin: { t: 60, r: 10, l: 45, b: 40 }, 
-                legend: { orientation: 'h', y: -0.2, x: 0.5, xanchor: 'center' }, 
-                autosize: true,
-                dragmode: false // Further prevents mobile touch trapping
+                margin: { t: 60, r: 10, l: 45, b: 40 }, legend: { orientation: 'h', y: -0.2, x: 0.5, xanchor: 'center' }, autosize: true, dragmode: false 
             };
         };
 
         const renderCharts = (baseData, actualData, inputs, hasStrat) => {
             const xKey = 'year'; 
-            let termX = inputs.termYears;
-            if (inputs.startDate && baseData.schedule.length > 0) termX = baseData.schedule[0].year + inputs.termYears;
-            const termLine = { type: 'line', x0: termX, y0: 0, x1: termX, y1: 1, xref: 'x', yref: 'paper', line: { color: CONFIG.colors.interest, width: 2, dash: 'dot' } };
+            let termX = (state.currentMode === 'mortgage') ? inputs.termYears : null;
+            
+            if (termX !== null && inputs.startDate && baseData.schedule.length > 0) {
+                termX = baseData.schedule[0].year + inputs.termYears;
+            }
+            
+            const termLine = termX ? { type: 'line', x0: termX, y0: 0, x1: termX, y1: 1, xref: 'x', yref: 'paper', line: { color: CONFIG.colors.interest, width: 2, dash: 'dot' } } : null;
 
             const p1 = actualData.schedule[0] || { principal:0, interest:0, tax:0, ins:0, hoa:0, pmi:0, extra:0 };
             const totPITI = p1.principal + p1.interest + p1.tax + p1.ins + p1.hoa + p1.pmi + p1.extra;
             const fs = window.innerWidth < 768 ? '18px' : '22px';
             const tc = state.isDark ? '#fff' : '#000';
 
-            Plotly.react('monthlyPaymentCircle', [{ values: [p1.principal, p1.interest, p1.tax, p1.ins, p1.hoa, p1.pmi, p1.extra].filter(v=>v>0), labels: ['Principal', 'Interest', 'Taxes', 'Insurance', 'HOA', 'PMI', 'Extra'].filter((_,i)=>[p1.principal, p1.interest, p1.tax, p1.ins, p1.hoa, p1.pmi, p1.extra][i]>0), type: 'pie', hole: 0.75, marker: { colors: [CONFIG.colors.principal, CONFIG.colors.interest, CONFIG.colors.tax, CONFIG.colors.ins, CONFIG.colors.hoa, CONFIG.colors.pmi, CONFIG.colors.extra] }, textinfo: 'none', hovertemplate: '<b>%{label}</b><br>$%{value:,.2f}<extra></extra>' }], { showlegend: false, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', margin: {t:0, b:0, l:0, r:0}, annotations: [{ text: `<b>Total/Period</b><br><span style="font-size: ${fs}; color: ${tc}">${formatCurrency(totPITI)}</span>`, showarrow: false }] }, PLOT_CONFIG);
-            Plotly.react('paymentBreakdownCircle', [{ values: [p1.principal, p1.interest], labels: ['Principal', 'Interest'], type: 'pie', hole: 0.6, marker: { colors: [CONFIG.colors.principal, CONFIG.colors.interest] }, textinfo: 'none' }], { showlegend: false, paper_bgcolor: 'rgba(0,0,0,0)', margin: {t:0, b:0, l:0, r:0}, annotations: [{text: 'P & I Only', showarrow: false, font: { size: 14, color: tc, weight: 800 }}] }, PLOT_CONFIG);
+            if(state.currentMode === 'mortgage') {
+                Plotly.react('monthlyPaymentCircle', [{ values: [p1.principal, p1.interest, p1.tax, p1.ins, p1.hoa, p1.pmi, p1.extra].filter(v=>v>0), labels: ['Principal', 'Interest', 'Taxes', 'Insurance', 'HOA', 'PMI', 'Extra'].filter((_,i)=>[p1.principal, p1.interest, p1.tax, p1.ins, p1.hoa, p1.pmi, p1.extra][i]>0), type: 'pie', hole: 0.75, marker: { colors: [CONFIG.colors.principal, CONFIG.colors.interest, CONFIG.colors.tax, CONFIG.colors.ins, CONFIG.colors.hoa, CONFIG.colors.pmi, CONFIG.colors.extra] }, textinfo: 'none', hovertemplate: '<b>%{label}</b><br>$%{value:,.2f}<extra></extra>' }], { showlegend: false, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', margin: {t:0, b:0, l:0, r:0}, annotations: [{ text: `<b>Total/Period</b><br><span style="font-size: ${fs}; color: ${tc}">${formatCurrency(totPITI)}</span>`, showarrow: false }] }, PLOT_CONFIG);
+            }
+            
+            Plotly.react('paymentBreakdownCircle', [{ 
+                values: [p1.principal, p1.interest], 
+                labels: ['Principal', 'Interest'], 
+                type: 'pie', 
+                hole: 0.6, 
+                marker: { colors: [CONFIG.colors.principal, CONFIG.colors.interest] }, 
+                textinfo: 'none',
+                hovertemplate: '<b>%{label}</b><br>$%{value:,.2f}<extra></extra>' 
+            }], { 
+                showlegend: false, paper_bgcolor: 'rgba(0,0,0,0)', margin: {t:0, b:0, l:0, r:0}, annotations: [{text: 'P & I Only', showarrow: false, font: { size: 14, color: tc, weight: 800 }}] 
+            }, PLOT_CONFIG);
 
-            const t3 = [{ x: baseData.schedule.map(d=>d[xKey]), y: baseData.schedule.map(d=>d.balance), name: 'Bal (Std)', type: 'scatter', fill: 'tozeroy', line: { color: CONFIG.colors.principal } }];
+            const t3 = [{ x: baseData.schedule.map(d=>d[xKey]), y: baseData.schedule.map(d=>d.balance), name: 'Bal (Baseline)', type: 'scatter', fill: 'tozeroy', line: { color: CONFIG.colors.principal } }];
             if(hasStrat) t3.push({ x: actualData.schedule.map(d=>d[xKey]), y: actualData.schedule.map(d=>d.balance), name: 'Bal (Actual)', type: 'scatter', line: { color: CONFIG.colors.extra, width: 3 } });
-            const l3 = getBaseLayout('Mortgage Balance', 'Year', '$'); l3.shapes = [termLine];
+            const l3 = getBaseLayout('Debt Balance Over Time', 'Year', '$'); if(termLine) l3.shapes = [termLine];
             Plotly.react('chart3', t3, l3, PLOT_CONFIG);
 
-            const pAmt = actualData.schedule.length ? (actualData.schedule[0].balance + actualData.schedule[0].principal) : 0;
-            const t4 = [{ x: baseData.schedule.map(d=>d[xKey]), y: baseData.schedule.map(d=>pAmt - d.balance), name: 'Equity (Std)', type: 'scatter', line: { color: CONFIG.colors.principal } }];
-            if(hasStrat) t4.push({ x: actualData.schedule.map(d=>d[xKey]), y: actualData.schedule.map(d=>pAmt - d.balance), name: 'Equity (Actual)', type: 'scatter', line: { color: CONFIG.colors.extra } });
-            Plotly.react('chart4', t4, getBaseLayout('Equity Build-Up', 'Year', '$'), PLOT_CONFIG);
+            if(state.currentMode === 'mortgage') {
+                const pAmt = actualData.schedule.length ? (actualData.schedule[0].balance + actualData.schedule[0].principal) : 0;
+                const t4 = [{ x: baseData.schedule.map(d=>d[xKey]), y: baseData.schedule.map(d=>pAmt - d.balance), name: 'Equity (Std)', type: 'scatter', line: { color: CONFIG.colors.principal } }];
+                if(hasStrat) t4.push({ x: actualData.schedule.map(d=>d[xKey]), y: actualData.schedule.map(d=>pAmt - d.balance), name: 'Equity (Actual)', type: 'scatter', line: { color: CONFIG.colors.extra } });
+                Plotly.react('chart4', t4, getBaseLayout('Equity Build-Up', 'Year', '$'), PLOT_CONFIG);
+            }
 
             const t2 = [ {x: actualData.schedule.map(d=>d[xKey]), y: actualData.schedule.map(d=>d.totalInterest), name: 'Interest', stackgroup: 'one', line: { color: CONFIG.colors.interest }}, {x: actualData.schedule.map(d=>d[xKey]), y: actualData.schedule.map(d=>d.totalPrincipal), name: 'Principal', stackgroup: 'one', line: { color: CONFIG.colors.principal }} ];
-            if(inputs.usePiti) t2.push({x: actualData.schedule.map(d=>d[xKey]), y: actualData.schedule.map(d=>d.totalEscrow), name: 'Escrow', stackgroup: 'one', line: { color: CONFIG.colors.tax }});
+            if(inputs.usePiti && state.currentMode === 'mortgage') t2.push({x: actualData.schedule.map(d=>d[xKey]), y: actualData.schedule.map(d=>d.totalEscrow), name: 'Escrow', stackgroup: 'one', line: { color: CONFIG.colors.tax }});
             Plotly.react('chart2', t2, getBaseLayout('Cumulative Outflow', 'Year', '$'), PLOT_CONFIG);
 
             const aData = {};
             actualData.schedule.forEach(d => { const y = Math.floor(d[xKey]); if(!aData[y]) aData[y] = {p:0, i:0, e:0, esc:0}; aData[y].p += d.principal; aData[y].i += d.interest; aData[y].e += d.extra; aData[y].esc += d.escrow; });
             const yrs = Object.keys(aData);
             const t11 = [ {x:yrs, y:yrs.map(y=>aData[y].i), name:'Interest', type:'bar', marker:{color:CONFIG.colors.interest}}, {x:yrs, y:yrs.map(y=>aData[y].p), name:'Principal', type:'bar', marker:{color:CONFIG.colors.principal}}, {x:yrs, y:yrs.map(y=>aData[y].e), name:'Extra', type:'bar', marker:{color:CONFIG.colors.extra}} ];
-            if(inputs.usePiti) t11.splice(1,0, {x:yrs, y:yrs.map(y=>aData[y].esc), name:'Escrow', type:'bar', marker:{color:CONFIG.colors.tax}});
+            if(inputs.usePiti && state.currentMode === 'mortgage') t11.splice(1,0, {x:yrs, y:yrs.map(y=>aData[y].esc), name:'Escrow', type:'bar', marker:{color:CONFIG.colors.tax}});
             Plotly.react('chart11', t11, Object.assign(getBaseLayout('Annual Cash Flow', 'Year', '$'), {barmode: 'stack'}), PLOT_CONFIG);
 
             Plotly.react('chart6', [ {x: actualData.schedule.map(d=>d[xKey]), y: actualData.schedule.map(d=>d.interest), name: 'Int Portion', type: 'scatter', fill: 'tozeroy', line: {color: CONFIG.colors.interest}}, {x: actualData.schedule.map(d=>d[xKey]), y: actualData.schedule.map(d=>d.principal), name: 'Prin Portion', type: 'scatter', fill: 'tonexty', line: {color: CONFIG.colors.principal}} ], getBaseLayout('Payment Comp.', 'Year', '$'), PLOT_CONFIG);
@@ -652,19 +726,20 @@
                 {x: ['Total Cost'], y: [fData.totalPrincipal], name: 'Principal', type: 'bar', marker: {color: CONFIG.colors.principal}}, 
                 {x: ['Total Cost'], y: [fData.totalExtra], name: 'Extra', type: 'bar', marker: {color: CONFIG.colors.extra}} 
             ];
-            if(inputs.usePiti) tTot.splice(1,0, {x: ['Total Cost'], y: [fData.totalEscrow], name: 'Escrow', type: 'bar', marker: {color: CONFIG.colors.tax}});
+            if(inputs.usePiti && state.currentMode === 'mortgage') tTot.splice(1,0, {x: ['Total Cost'], y: [fData.totalEscrow], name: 'Escrow', type: 'bar', marker: {color: CONFIG.colors.tax}});
             Plotly.react('chart', tTot, Object.assign(getBaseLayout('Lifetime Breakdown', '', '$'), {barmode: 'stack'}), PLOT_CONFIG);
 
             requestAnimationFrame(() => {
-                if (inputs.usePiti) {
+                if (inputs.usePiti && state.currentMode === 'mortgage') {
                     const tLTV = [{ x: baseData.schedule.map(d=>d[xKey]), y: baseData.schedule.map(d=>d.ltv), name: 'LTV (Std)', type: 'scatter', line: { color: CONFIG.colors.principal } }];
                     if(hasStrat) tLTV.push({ x: actualData.schedule.map(d=>d[xKey]), y: actualData.schedule.map(d=>d.ltv), name: 'LTV (Actual)', type: 'scatter', line: { color: CONFIG.colors.extra, width: 3 } });
                     const lLTV = getBaseLayout('LTV & PMI Drop', 'Year', 'LTV (%)'); lLTV.yaxis.range = [0, Math.max(105, actualData.schedule[0]?.ltv || 100)]; lLTV.shapes = [ termLine, { type: 'line', x0: 0, y0: 80, x1: 1, y1: 80, xref: 'paper', yref: 'y', line: { color: CONFIG.colors.thresholdRed, width: 2, dash: 'dash' } } ];
                     Plotly.react('chartLTV', tLTV, lLTV, PLOT_CONFIG);
                 }
 
-                if (inputs.useOppCost && hasStrat) {
-                    const ir = inputs.investRate / 100, hp = inputs.homePrice;
+                if (inputs.useOppCost) {
+                    els.containers.oppCost.style.display = 'block';
+                    const ir = inputs.investRate / 100, hp = (state.currentMode === 'mortgage') ? inputs.homePrice : inputs.ccBalance;
                     const p1X=[], p1Y=[]; let p1Inv=0; const p1PIEx=actualData.schedule[0].principal + actualData.schedule[0].interest + actualData.schedule[0].extra; const p1PY=actualData.summary.periodsPerYear; const p1Rate=Math.pow(1+ir, 1/p1PY)-1;
                     actualData.schedule.forEach(d => { p1X.push(d.year); p1Y.push(hp - d.balance); });
                     let cY = p1X[p1X.length - 1]; const mY = baseData.schedule[baseData.schedule.length - 1].year;
@@ -674,14 +749,16 @@
                     const annBud = p1PIEx * p1PY, annBase = p2PI * p2PY; const p2InvPer = Math.max(0, annBud - annBase) / p2PY;
                     baseData.schedule.forEach(d => { p2Inv = (p2Inv + p2InvPer) * (1 + p2Rate); p2X.push(d.year); p2Y.push(hp - d.balance + p2Inv); });
                     
-                    Plotly.react('chartOppCost', [ { x: p1X, y: p1Y, name: 'Pay Debt Fast', type: 'scatter', line: { color: CONFIG.colors.extra, width: 3 } }, { x: p2X, y: p2Y, name: 'Invest Extra', type: 'scatter', line: { color: CONFIG.colors.investLine, width: 3, dash: 'dot' } } ], getBaseLayout('Pay Debt vs Invest', 'Year', 'Net Worth ($)'), PLOT_CONFIG);
+                    Plotly.react('chartOppCost', [ { x: p1X, y: p1Y, name: 'Pay Debt Fast', type: 'scatter', line: { color: CONFIG.colors.extra, width: 3 } }, { x: p2X, y: p2Y, name: 'Invest Surplus', type: 'scatter', line: { color: CONFIG.colors.investLine, width: 3, dash: 'dot' } } ], getBaseLayout('Projection: Pay Debt vs Invest', 'Year', 'Net Worth ($)'), PLOT_CONFIG);
+                } else {
+                    els.containers.oppCost.style.display = 'none';
                 }
 
                 if (hasStrat) {
                     const tcBase = baseData.summary.totalInterest + baseData.summary.totalEscrow, tcExt = actualData.summary.totalInterest + actualData.summary.totalEscrow;
-                    Plotly.react('chart9', [{ x: ['Std', 'Actual'], y: [tcBase, tcExt], type: 'bar', text: [formatCurrency(tcBase), formatCurrency(tcExt)], textposition: 'auto', marker: { color: [CONFIG.colors.interest, CONFIG.colors.extra] } }], getBaseLayout('Total Cost Comparison', '', '$'), PLOT_CONFIG);
-                    const yBase = (baseData.summary.periodsToPayoff / 12).toFixed(1), yExt = (actualData.summary.periodsToPayoff / actualData.summary.periodsPerYear).toFixed(1);
-                    Plotly.react('chart12', [{ x: ['Std', 'Actual'], y: [yBase, yExt], type: 'bar', text: [yBase + ' Yrs', yExt + ' Yrs'], textposition: 'auto', marker: { color: [CONFIG.colors.principal, CONFIG.colors.extra] } }], getBaseLayout('Time to Pay Off', '', 'Years'), PLOT_CONFIG);
+                    Plotly.react('chart9', [{ x: ['Baseline', 'Actual'], y: [tcBase, tcExt], type: 'bar', text: [formatCurrency(tcBase), formatCurrency(tcExt)], textposition: 'auto', marker: { color: [CONFIG.colors.interest, CONFIG.colors.extra] } }], getBaseLayout('Total Interest Cost', '', '$'), PLOT_CONFIG);
+                    const yBase = (baseData.summary.periodsToPayoff / baseData.summary.periodsPerYear).toFixed(1), yExt = (actualData.summary.periodsToPayoff / actualData.summary.periodsPerYear).toFixed(1);
+                    Plotly.react('chart12', [{ x: ['Baseline', 'Actual'], y: [yBase, yExt], type: 'bar', text: [yBase + ' Yrs', yExt + ' Yrs'], textposition: 'auto', marker: { color: [CONFIG.colors.principal, CONFIG.colors.extra] } }], getBaseLayout('Time to Pay Off', '', 'Years'), PLOT_CONFIG);
                 }
             });
         };
@@ -702,10 +779,13 @@
 
         const validate = () => {
             els.containers.error.style.display = 'none';
-            if (parseFloat(els.inputs.homePrice.value) <= 0) {
+            if (state.currentMode === 'mortgage' && parseFloat(els.inputs.homePrice.value) <= 0) {
                 els.containers.error.textContent = "Home Price must be a positive number.";
-                els.containers.error.style.display = 'block';
-                return false;
+                els.containers.error.style.display = 'block'; return false;
+            }
+            if (state.currentMode === 'cc' && parseFloat(els.inputs.ccBalance.value) <= 0) {
+                els.containers.error.textContent = "Balance must be a positive number.";
+                els.containers.error.style.display = 'block'; return false;
             }
             return true;
         };
@@ -714,109 +794,113 @@
             if (e) e.preventDefault();
             if (!validate()) return;
 
+            const isMortgage = state.currentMode === 'mortgage';
+
             const inputs = {
                 homePrice: parseFloat(els.inputs.homePrice.value) || 0, downPayment: parseFloat(els.inputs.downPayment.value) || 0,
+                ccBalance: parseFloat(els.inputs.ccBalance.value) || 0, province: els.inputs.province.value,
                 annualRate: parseFloat(els.inputs.rate.value) || 0, amortizationYears: parseFloat(els.inputs.amortization.value) || 0,
                 termYears: parseFloat(els.inputs.term.value) || 0, compounding: els.inputs.compounding.value, frequency: els.inputs.frequency.value,
-                usePiti: els.inputs.pitiToggle.checked, taxRate: els.inputs.pitiToggle.checked ? (parseFloat(els.inputs.tax.value) || 0) : 0,
-                insRate: els.inputs.pitiToggle.checked ? (parseFloat(els.inputs.ins.value) || 0) : 0, hoaRate: els.inputs.pitiToggle.checked ? (parseFloat(els.inputs.hoa.value) || 0) : 0,
-                pmiRate: els.inputs.pitiToggle.checked ? (parseFloat(els.inputs.pmi.value) || 0) : 0, useOppCost: els.inputs.oppCostToggle.checked,
+                usePiti: isMortgage && els.inputs.pitiToggle.checked, taxRate: isMortgage && els.inputs.pitiToggle.checked ? (parseFloat(els.inputs.tax.value) || 0) : 0,
+                insRate: isMortgage && els.inputs.pitiToggle.checked ? (parseFloat(els.inputs.ins.value) || 0) : 0, hoaRate: isMortgage && els.inputs.pitiToggle.checked ? (parseFloat(els.inputs.hoa.value) || 0) : 0,
+                pmiRate: isMortgage && els.inputs.pitiToggle.checked ? (parseFloat(els.inputs.pmi.value) || 0) : 0, useOppCost: els.inputs.oppCostToggle.checked,
                 investRate: els.inputs.oppCostToggle.checked ? (parseFloat(els.inputs.investRate.value) || 7.0) : 7.0,
                 extraPayment: parseFloat(els.inputs.extra.value) || 0, startDate: els.inputs.date.value
             };
 
-            const principalBorrowAmount = inputs.homePrice - inputs.downPayment;
+            const principalBorrowAmount = isMortgage ? (inputs.homePrice - inputs.downPayment) : inputs.ccBalance;
             updateKineticText(els.results.mortgageDisplay, principalBorrowAmount);
-            els.results.truePaymentLabel.textContent = inputs.usePiti ? "True Periodic Payment (PITI)" : "Periodic Payment (P & I)";
 
-            const hasStrat = inputs.extraPayment > 0 || inputs.frequency !== 'monthly';
-            els.containers.ltv.style.display = inputs.usePiti ? 'block' : 'none';
-            els.containers.oppCost.style.display = (inputs.useOppCost && hasStrat) ? 'block' : 'none';
+            // CC Specifics
+            if (!isMortgage) {
+                const dailyVampireCost = principalBorrowAmount * ((inputs.annualRate / 100) / 365);
+                updateKineticText(els.results.vampireDrain, dailyVampireCost, true, true);
+            }
+
+            const hasStrat = inputs.extraPayment > 0 || (isMortgage && inputs.frequency !== 'monthly');
             els.containers.comparison.style.display = hasStrat ? 'block' : 'none';
 
-            const baseData = generateSchedule(inputs, true), actData = generateSchedule(inputs, false);
+            const baseData = isMortgage ? generateMortgageSchedule(inputs, true) : generateCCSchedule(inputs, true);
+            const actData = isMortgage ? generateMortgageSchedule(inputs, false) : generateCCSchedule(inputs, false);
             
-            // Core strategic calculation: Actual Total amount paid to the bank
             const totalActualLifetimePaidToBank = actData.summary.totalInterest + principalBorrowAmount;
             
-            // --- DYNAMIC CONCENTRIC VISUALIZATION LOGIC ---
-            // Visualizer baseline (Blue Principal circle) radius is locked at 30.
-            const blueprintRadius = 30;
-            
-            // Area Metaphor: To create visceral impact, the visual scaling is based on Area, not Diameter.
-            // Areas Scale directly: (A_cost / A_principal) = (Total_Paid / Original_Principal)
-            // But Radii scale by sqrt of the Area ratio.
-            
-            // Area growth factor (how much the 'cost' overpower the 'blueprint')
+            // Concentric Visualization Logic
+            const blueprintRadius = 20; 
             const costPowerFactor = principalBorrowAmount > 0 ? totalActualLifetimePaidToBank / principalBorrowAmount : 1;
+            const maxAllowedRadius = 48; 
+            let constMarkupRadius = blueprintRadius * Math.sqrt(costPowerFactor);
+            if (constMarkupRadius > maxAllowedRadius) constMarkupRadius = maxAllowedRadius; 
             
-            // Calculate necessary radius for the Red "markup" concentric area to occupy appropriate scaled area
-            // r_cost = r_principal * sqrt(growth_factor)
-            constMarkupRadius = blueprintRadius * Math.sqrt(costPowerFactor);
+            gsap.to(['#concentric-outer', '#concentric-border'], { attr: { r: constMarkupRadius }, duration: 0.8, ease: 'back.out(1.5)' });
             
-            // GSAP Kinetic Animation Engine for visualizer scaling
-            gsap.to(['#concentric-outer', '#concentric-border'], {
-                attr: { r: constMarkupRadius }, // Animate the visual 'r' attribute
-                duration: 0.8,
-                ease: 'back.out(1.5)' // Gives a dynamic spring-loaded 'bento' feel
-            });
-            
-            // Kinetic Number animation for the central value
             const concentricCenterEl = document.getElementById('concentric-center-val');
             let centerObj = { v: parseFloat(els.results.concentricStack.getAttribute('data-last-paid')) || 0 };
             els.results.concentricStack.setAttribute('data-last-paid', totalActualLifetimePaidToBank);
-            gsap.to(centerObj, {
-                v: totalActualLifetimePaidToBank,
-                duration: 0.8,
-                ease: "power3.out",
-                onUpdate: () => { concentricCenterEl.textContent = formatCurrency(Math.round(centerObj.v)); }
-            });
+            gsap.to(centerObj, { v: totalActualLifetimePaidToBank, duration: 0.8, ease: "power3.out", onUpdate: () => { concentricCenterEl.textContent = formatCurrency(Math.round(centerObj.v)); }});
 
-            // Summary Text Update
-            yrs_paid = Math.floor(actData.summary.periodsToPayoff / actData.summary.periodsPerYear);
-            rem_paid = actData.summary.periodsToPayoff % actData.summary.periodsPerYear;
-            updateKineticText(els.results.paidOffIn, `${yrs_paid} yrs, ${rem_paid} mos`, false);
+            let yrs_paid = Math.floor(actData.summary.periodsToPayoff / actData.summary.periodsPerYear);
+            let rem_paid = actData.summary.periodsToPayoff % actData.summary.periodsPerYear;
+            updateKineticText(els.results.paidOffIn, `${yrs_paid} yrs, ${rem_paid} ${isMortgage && inputs.frequency.includes('bi') ? 'pds' : 'mos'}`, false);
             
-            const termPer = Math.ceil(inputs.termYears * actData.summary.periodsPerYear);
-            updateKineticText(els.results.termBalance, termPer < actData.schedule.length ? actData.schedule[Math.max(0, termPer - 1)].balance : 0);
+            if (isMortgage) {
+                const termPer = Math.ceil(inputs.termYears * actData.summary.periodsPerYear);
+                updateKineticText(els.results.termBalance, termPer < actData.schedule.length ? actData.schedule[Math.max(0, termPer - 1)].balance : 0);
+            }
+            
             updateKineticText(els.results.saved, (baseData.summary.totalInterest) - (actData.summary.totalInterest));
 
             renderCharts(baseData, actData, inputs, hasStrat);
-            updateTable(actData.schedule, inputs.usePiti);
+            
+            updateTable(actData.schedule, (isMortgage && inputs.usePiti));
         };
 
-        const initAnimations = () => {
-            gsap.from(".gsap-fade-in", { y: -20, opacity: 0, duration: 0.8, ease: "power3.out" });
-            gsap.from(".gsap-slide-up", { y: 40, opacity: 0, duration: 0.8, stagger: 0.1, ease: "back.out(1.5)" });
-        };
+        // DOM Listeners & Initialization
+        els.masterBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                els.masterBtns.forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                state.currentMode = e.target.getAttribute('data-mode');
+                
+                document.body.className = `mode-${state.currentMode} ${state.isDark ? 'dark-mode' : ''}`;
+                
+                if (state.currentMode === 'cc') {
+                    els.inputs.rate.value = 19.99;
+                    els.inputs.extra.value = 0;
+                    document.getElementById('inner-circle-label').textContent = 'CC Balance';
+                } else {
+                    els.inputs.rate.value = 2.62;
+                    els.inputs.extra.value = 0;
+                    document.getElementById('inner-circle-label').textContent = 'Principal';
+                }
+                
+                calculate();
+            });
+        });
 
-        // Listeners
-        els.modeSwitch.addEventListener('change', (e) => { state.isDark = e.target.checked; document.body.classList.toggle('dark-mode', state.isDark); calculate(); });
-        els.inputs.pitiToggle.addEventListener('change', (e) => { els.containers.pitiSection.style.display = e.target.checked ? 'block' : 'none'; calculate(); });
+        els.modeSwitch.addEventListener('change', (e) => { state.isDark = e.target.checked; document.body.className = `mode-${state.currentMode} ${state.isDark ? 'dark-mode' : ''}`; calculate(); });
         els.inputs.oppCostToggle.addEventListener('change', (e) => { els.containers.oppCostSection.style.display = e.target.checked ? 'block' : 'none'; calculate(); });
         document.getElementById('clearBtn').addEventListener('click', () => { els.form.reset(); calculate(); });
         els.form.addEventListener('submit', calculate);
         
         Object.values(els.inputs).forEach(inp => {
-            if(inp && !['includePitiToggle', 'oppCostToggle'].includes(inp.id)) {
+            if(inp && !['oppCostToggle'].includes(inp.id)) {
                 inp.addEventListener('blur', calculate);
                 if(inp.tagName === 'SELECT') inp.addEventListener('change', calculate);
             }
         });
 
-        window.addEventListener('resize', () => {
-            clearTimeout(window.resizeTimer);
-            window.resizeTimer = setTimeout(calculate, 100);
-        });
+        window.addEventListener('resize', () => { clearTimeout(window.resizeTimer); window.resizeTimer = setTimeout(calculate, 100); });
 
         document.addEventListener('DOMContentLoaded', () => {
             if (!els.inputs.date.value) {
                 const nextM = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
                 els.inputs.date.value = `${nextM.getFullYear()}-${String(nextM.getMonth() + 1).padStart(2, '0')}-${String(nextM.getDate()).padStart(2, '0')}`;
             }
-            document.body.classList.toggle('dark-mode', state.isDark);
+            document.body.className = `mode-${state.currentMode} ${state.isDark ? 'dark-mode' : ''}`;
             calculate();
-            initAnimations();
+            gsap.from(".gsap-fade-in", { y: -20, opacity: 0, duration: 0.8, ease: "power3.out" });
+            gsap.from(".gsap-slide-up", { y: 40, opacity: 0, duration: 0.8, stagger: 0.1, ease: "back.out(1.5)" });
         });
     </script>
 </body>
