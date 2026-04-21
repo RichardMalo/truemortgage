@@ -84,7 +84,17 @@
         .small-switch { width: 44px; height: 24px; margin-top: 2px; }
         .small-switch .slider:before { height: 16px; width: 16px; left: 4px; bottom: 4px; }
         .small-switch input:checked + .slider:before { transform: translateX(20px); }
-        .section-header-with-toggle { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        
+        /* BULLETPROOF ALIGNMENT FIX */
+        .section-header-with-toggle { 
+            display: flex; justify-content: space-between; align-items: center; 
+            margin-bottom: 15px; width: 100%; 
+        }
+        .toggle-wrapper {
+            margin-left: auto; /* Forces the toggle to the extreme right */
+            display: flex;
+            align-items: center;
+        }
 
         .input-group-row { display: flex; gap: 16px; margin-bottom: 16px; width: 100%; }
         .input-group { flex: 1; min-width: 0; display: flex; flex-direction: column; }
@@ -159,7 +169,6 @@
         
         #error-message { background-color: var(--danger-color); color: white; padding: 15px; border-radius: 14px; margin-bottom: 20px; text-align: center; font-weight: 600; display: none;}
 
-        /* Logic specific hiding classes */
         .mortgage-only { display: flex; }
         .cc-only { display: none; }
         .mode-cc .mortgage-only { display: none !important; }
@@ -178,7 +187,6 @@
             .input-group-row { flex-direction: column; gap: 16px; margin-bottom: 16px; }
             .btn-group { flex-direction: column; width: 100%; }
             .stats-grid { grid-template-columns: 1fr; gap: 12px; width: 100%; }
-            .stat-box { padding: 15px; width: 100%; }
             
             .true-payment-circle { max-width: 200px; }
             .dynamic-concentric-stack { max-width: 240px; }
