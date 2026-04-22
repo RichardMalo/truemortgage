@@ -140,7 +140,10 @@
 
         /* Updated Concentric Stack */
         .concentric-visualization-card { display: flex; flex-direction: column; align-items: center; padding: 25px; margin-bottom: 24px; border-radius: 22px; background-color: var(--card-bg); width: 100%; box-shadow: var(--shadow);}
-        .dynamic-concentric-stack { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 360px; margin-top: -60px; margin-bottom: 10px; }
+        
+        /* SCALED UP 20% & NEGATIVE MARGIN APPLIED */
+        .dynamic-concentric-stack { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 360px; margin-top: -30px; margin-bottom: 10px; }
+        
         .stack-wrapper { width: 100%; display: flex; justify-content: center; align-items: center; position: relative; aspect-ratio: 1; margin-bottom: 25px; }
         
         .blueprint-label { position: absolute; left: -10px; bottom: -25px; font-weight: 800; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; text-align: center; width: 100px; }
@@ -181,7 +184,9 @@
             .stat-box { padding: 15px; width: 100%; }
             
             .true-payment-circle { max-width: 200px; }
-            .dynamic-concentric-stack { max-width: 310px; margin-top: -40px; }
+            /* SCALED UP 20% & NEGATIVE MARGIN APPLIED FOR MOBILE */
+            .dynamic-concentric-stack { max-width: 310px; margin-top: -20px; }
+            
             .stack-wrapper { margin-bottom: 25px; }
             .blueprint-label { left: 0; bottom: -20px; font-size: 0.65rem; width: 90px; }
             .cost-label { right: 0; bottom: -20px; font-size: 0.65rem; width: 90px; }
@@ -365,10 +370,11 @@
                             <svg viewBox="0 0 100 100" class="concentric-svg-comparison" style="width: 100%; height: 100%;">
                                 <circle id="concentric-outer" cx="50" cy="50" r="0" fill="#ef4444" opacity="0.15"></circle>
                                 <circle id="concentric-border" cx="50" cy="50" r="0" stroke="#ef4444" stroke-width="0.5" fill="none" opacity="0.3"></circle>
+                                
                                 <circle cx="50" cy="50" r="20" fill="#3b82f6"></circle>
                                 
                                 <text id="svg-inner-principal" x="50" y="44" text-anchor="middle" font-size="5.5" font-weight="800" fill="black">$0</text>
-                                <path d="M 48.5 47 L 51.5 47 L 50 50 Z" fill="white"></path>
+                                <text x="50" y="51" text-anchor="middle" font-size="7" font-weight="800" fill="white">+</text>
                                 <text id="svg-inner-markup" x="50" y="56" text-anchor="middle" font-size="5.5" font-weight="800" fill="white">$0</text>
                             </svg>
                             
@@ -830,8 +836,7 @@
             };
 
             const principalBorrowAmount = isMortgage ? (inputs.homePrice - inputs.downPayment) : inputs.ccBalance;
-            updateKineticText(els.results.mortgageDisplay, principalBorrowAmount);
-
+            
             if (!isMortgage) {
                 const dailyVampireCost = principalBorrowAmount * ((inputs.annualRate / 100) / 365);
                 updateKineticText(els.results.vampireDrain, dailyVampireCost, true, true);
@@ -862,6 +867,9 @@
             
             // Populate the Actual Lifetime Paid label
             updateKineticText(els.results.actualLifetimePaidValue, totalActualLifetimePaidToBank);
+
+            // Update remaining general summaries
+            updateKineticText(els.results.mortgageDisplay, principalBorrowAmount);
 
             let yrs_paid = Math.floor(actData.summary.periodsToPayoff / actData.summary.periodsPerYear);
             let rem_paid = actData.summary.periodsToPayoff % actData.summary.periodsPerYear;
