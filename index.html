@@ -161,10 +161,9 @@
         
         #error-message { background-color: var(--danger-color); color: white; padding: 15px; border-radius: 14px; margin-bottom: 20px; text-align: center; font-weight: 600; display: none;}
 
-        .mortgage-only { display: flex; }
-        .cc-only { display: none; }
-        .mode-cc .mortgage-only { display: none !important; }
-        .mode-cc .cc-only { display: flex !important; }
+        /* FIXED: Hiding logic that does NOT break block layouts */
+        body.mode-mortgage .cc-only { display: none !important; }
+        body.mode-cc .mortgage-only { display: none !important; }
 
         @media (max-width: 768px) {
             .container { padding: 15px 10px; overflow-x: hidden; }
@@ -399,7 +398,7 @@
                             <label id="summaryBalLabel">Original Debt</label>
                             <div class="kinetic-text" id="mortgageAmountDisplay" data-val="0">$0.00</div>
                         </div>
-                        <div class="stat-box danger-box squishy-interactive cc-only" style="display: none;">
+                        <div class="stat-box danger-box squishy-interactive cc-only">
                             <label class="danger-text">Daily Vampire Drain</label>
                             <div class="kinetic-text danger-text" id="dailyVampireDrain" data-val="0">$0.00</div>
                         </div>
@@ -684,7 +683,6 @@
             gsap.to(obj, { v: val, duration: 0.6, ease: "power2.out", onUpdate: () => { el.textContent = isCurr ? (decimal ? formatDecimal(obj.v) : formatCurrency(obj.v)) : Math.round(obj.v); } });
         };
 
-        // FIXED: margin 'b' increased to 80 and legend pushed slightly lower (y: -0.3)
         const getBaseLayout = (title, xTitle, yTitle) => {
             const c = state.isDark ? '#f8fafc' : '#1e293b', g = state.isDark ? '#334155' : '#e2e8f0';
             return { 
@@ -792,7 +790,7 @@
                 if (hasStrat) {
                     const tcBase = baseData.summary.totalInterest + baseData.summary.totalEscrow, tcExt = actualData.summary.totalInterest + actualData.summary.totalEscrow;
                     Plotly.react('chart9', [{ x: ['Baseline', 'Actual'], y: [tcBase, tcExt], type: 'bar', text: [formatCurrency(tcBase), formatCurrency(tcExt)], textposition: 'auto', marker: { color: [CONFIG.colors.interest, CONFIG.colors.extra] } }], getBaseLayout('Total Interest Cost', '', '$'), PLOT_CONFIG);
-                    const yBase = (baseData.summary.summary.periodsToPayoff / baseData.summary.periodsPerYear).toFixed(1), yExt = (actualData.summary.periodsToPayoff / actualData.summary.periodsPerYear).toFixed(1);
+                    const yBase = (baseData.summary.periodsToPayoff / baseData.summary.periodsPerYear).toFixed(1), yExt = (actualData.summary.periodsToPayoff / actualData.summary.periodsPerYear).toFixed(1);
                     Plotly.react('chart12', [{ x: ['Baseline', 'Actual'], y: [yBase, yExt], type: 'bar', text: [yBase + ' Yrs', yExt + ' Yrs'], textposition: 'auto', marker: { color: [CONFIG.colors.principal, CONFIG.colors.extra] } }], getBaseLayout('Time to Pay Off', '', 'Years'), PLOT_CONFIG);
                 }
             });
