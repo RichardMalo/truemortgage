@@ -66,7 +66,11 @@
             vertical-align: middle;
             transition: background 0.3s ease, transform 0.2s ease;
         }
-        .help-tip:hover { background: rgba(37, 99, 235, 0.2); transform: scale(1.1); }
+        
+        @media (hover: hover) and (pointer: fine) {
+            .help-tip:hover { background: rgba(37, 99, 235, 0.2); transform: scale(1.1); }
+        }
+        
         .help-tip .tooltip-text {
             visibility: hidden;
             width: max-content;
@@ -94,6 +98,7 @@
             letter-spacing: normal;
             font-family: 'Inter', sans-serif;
         }
+        
         .help-tip .tooltip-text::after {
             content: "";
             position: absolute;
@@ -104,7 +109,18 @@
             border-style: solid;
             border-color: var(--card-bg) transparent transparent transparent;
         }
-        .help-tip:hover .tooltip-text, .help-tip:active .tooltip-text {
+
+        /* Hover for devices with cursors */
+        @media (hover: hover) and (pointer: fine) {
+            .help-tip:hover .tooltip-text, .help-tip:active .tooltip-text {
+                visibility: visible;
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+        
+        /* JS-triggered class for touch devices */
+        .help-tip.touch-active .tooltip-text {
             visibility: visible;
             opacity: 1;
             transform: translateX(-50%) translateY(0);
@@ -130,7 +146,6 @@
             box-shadow: var(--shadow); border: 1px solid rgba(255, 255, 255, 0.05);
             transition: transform 0.4s var(--spring-easing), box-shadow 0.4s var(--spring-easing), background-color 0.3s ease;
             width: 100%; 
-            /* overflow: hidden; REMOVED to allow tooltips to spill out */
         }
 
         @media (hover: hover) and (pointer: fine) { .squishy-interactive:hover { transform: scale(1.015) translateY(-2px); box-shadow: var(--shadow-hover); z-index: 10; } }
@@ -179,8 +194,7 @@
         
         .stat-box { 
             background: var(--input-bg); padding: 16px; border-radius: 20px; text-align: center; width: 100%; 
-            position: relative; /* overflow: hidden; REMOVED to allow tooltips to spill out */
-            display: flex; flex-direction: column; justify-content: center;
+            position: relative; display: flex; flex-direction: column; justify-content: center;
             container-type: inline-size; 
         }
         .stat-box label { font-size: 0.85rem; font-weight: 700; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.05em; display: inline-flex; justify-content: center;}
@@ -256,7 +270,12 @@
 
             /* Ensure tooltips don't clip off-screen on mobile */
             .help-tip .tooltip-text { left: 0; transform: translateX(-40%) translateY(10px); }
-            .help-tip:hover .tooltip-text, .help-tip:active .tooltip-text { transform: translateX(-40%) translateY(0); }
+            
+            @media (hover: hover) and (pointer: fine) {
+                .help-tip:hover .tooltip-text, .help-tip:active .tooltip-text { transform: translateX(-40%) translateY(0); }
+            }
+            .help-tip.touch-active .tooltip-text { transform: translateX(-40%) translateY(0); }
+            
             .help-tip .tooltip-text::after { left: 40%; }
         }
     </style>
@@ -976,6 +995,38 @@
             updateTable(actData.schedule, (isMortgage && inputs.usePiti));
         };
 
+        const setupTouchTooltips = () => {
+            const tips = document.querySelectorAll('.help-tip');
+            let activeTip = null;
+            let touchTimeout;
+
+            tips.forEach(tip => {
+                tip.addEventListener('touchstart', () => {
+                    clearTimeout(touchTimeout);
+                    if (activeTip && activeTip !== tip) {
+                        activeTip.classList.remove('touch-active');
+                    }
+                    tip.classList.add('touch-active');
+                    activeTip = tip;
+                }, { passive: true });
+
+                tip.addEventListener('touchend', () => {
+                    touchTimeout = setTimeout(() => {
+                        tip.classList.remove('touch-active');
+                        if (activeTip === tip) activeTip = null;
+                    }, 1200); // Disappears 1.2s after lifting finger
+                }, { passive: true });
+            });
+
+            // Instantly drop tooltips if tapping anywhere else on the screen
+            document.addEventListener('touchstart', (e) => {
+                if (activeTip && !e.target.closest('.help-tip')) {
+                    activeTip.classList.remove('touch-active');
+                    activeTip = null;
+                }
+            }, { passive: true });
+        };
+
         // DOM Listeners & Initialization
         els.masterBtns.forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -1022,7 +1073,10 @@
                 els.inputs.date.value = `${nextM.getFullYear()}-${String(nextM.getMonth() + 1).padStart(2, '0')}-${String(nextM.getDate()).padStart(2, '0')}`;
             }
             document.body.className = `mode-${state.currentMode} ${state.isDark ? 'dark-mode' : ''}`;
+            
+            setupTouchTooltips(); // Initialize the new touch listener behavior
             calculate();
+            
             gsap.from(".gsap-fade-in", { y: -20, opacity: 0, duration: 0.8, ease: "power3.out" });
             gsap.from(".gsap-slide-up", { y: 40, opacity: 0, duration: 0.8, stagger: 0.1, ease: "back.out(1.5)" });
         });
