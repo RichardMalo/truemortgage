@@ -83,7 +83,7 @@
             border: 1px solid var(--border-color);
             box-shadow: 0 15px 35px -5px rgba(0,0,0,0.35);
             position: absolute;
-            z-index: 999999; /* Massive z-index to force it to top */
+            z-index: 999999; 
             bottom: 140%;
             left: 50%;
             transform: translateX(-50%) translateY(10px);
@@ -171,9 +171,11 @@
         .input-group label { display: flex; align-items: center; font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; color: var(--text-color); opacity: 0.9;}
         .inline-tooltip-text { font-size: 0.75rem; color: #888; font-weight: 400; margin-left: 4px;}
 
+        /* FIXED: Swapped explicit height for min-height and adjusted padding to ensure text descenders aren't clipped */
         input, .custom-select {
-            width: 100%; padding: 16px; border: 2px solid transparent; border-radius: 14px; background-color: var(--input-bg);
-            color: var(--text-color); font-size: 1rem; font-weight: 600; transition: all 0.3s ease; -webkit-appearance: none; height: 52px; 
+            width: 100%; padding: 14px 16px; border: 2px solid transparent; border-radius: 14px; background-color: var(--input-bg);
+            color: var(--text-color); font-size: 1rem; font-weight: 600; transition: all 0.3s ease; -webkit-appearance: none; 
+            min-height: 52px; line-height: 1.3;
         }
         input:focus, .custom-select:focus { outline: none; border-color: var(--primary-color); background-color: var(--card-bg); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1); }
 
@@ -268,7 +270,6 @@
             .chart-wrapper { padding: 5px; min-height: 320px; border-radius: 16px; }
             .plotly-container { min-height: 300px; }
 
-            /* Ensure tooltips don't clip off-screen on mobile */
             .help-tip .tooltip-text { left: 0; transform: translateX(-40%) translateY(10px); }
             
             @media (hover: hover) and (pointer: fine) {
@@ -313,11 +314,11 @@
                         <div class="input-group-row">
                             <div class="input-group mortgage-only">
                                 <label>Home Price ($) <span class="help-tip">?<span class="tooltip-text">The total market value or intended purchase price of the property.</span></span></label>
-                                <input type="number" id="homePrice" inputmode="decimal" value="850000" step="1000" min="0">
+                                <input type="number" id="homePrice" inputmode="decimal" value="800000" step="100" min="0">
                             </div>
                             <div class="input-group mortgage-only">
                                 <label>Down Payment ($) <span class="help-tip">?<span class="tooltip-text">The upfront cash paid towards the purchase, which immediately builds equity and reduces your starting loan balance.</span></span></label>
-                                <input type="number" id="downPayment" inputmode="decimal" value="0" step="1000" min="0">
+                                <input type="number" id="downPayment" inputmode="decimal" value="0" step="100" min="0">
                             </div>
                             <div class="input-group cc-only">
                                 <label>Current Balance ($) <span class="help-tip">?<span class="tooltip-text">The total amount currently owed on your revolving credit line.</span></span></label>
@@ -328,7 +329,7 @@
                         <div class="input-group-row">
                             <div class="input-group">
                                 <label>Interest Rate (APR %) <span class="help-tip">?<span class="tooltip-text">The annualized cost of borrowing money. Even a fractional reduction here significantly curtails long-term wealth drain.</span></span></label>
-                                <input type="number" id="interestRate" inputmode="decimal" step="0.01" required value="2.62" min="0">
+                                <input type="number" id="interestRate" inputmode="decimal" step="0.01" required value="4.00" min="0">
                             </div>
                             <div class="input-group mortgage-only">
                                 <label>Amortization (Yrs) <span class="help-tip">?<span class="tooltip-text">The total lifespan of the loan. Compressing this timeline increases monthly payments but drastically cuts the total interest remitted to the bank.</span></span></label>
@@ -466,9 +467,9 @@
                                 
                                 <circle cx="50" cy="50" r="20" fill="#3b82f6"></circle>
                                 
-                                <text id="svg-inner-principal" x="50" y="44" text-anchor="middle" font-size="5.5" font-weight="800" fill="black">$0</text>
-                                <text x="50" y="51" text-anchor="middle" font-size="7" font-weight="800" fill="white">+</text>
-                                <text id="svg-inner-markup" x="50" y="56" text-anchor="middle" font-size="5.5" font-weight="800" fill="white">$0</text>
+                                <text id="svg-inner-principal" x="50" y="42" text-anchor="middle" font-size="5.5" font-weight="800" fill="black">$0</text>
+                                <text x="50" y="50" text-anchor="middle" font-size="7" font-weight="800" fill="white">+</text>
+                                <text id="svg-inner-markup" x="50" y="58" text-anchor="middle" font-size="5.5" font-weight="800" fill="white">$0</text>
                             </svg>
                             
                             <div class="blueprint-label">
@@ -783,7 +784,6 @@
             gsap.to(obj, { v: val, duration: 0.6, ease: "power2.out", onUpdate: () => { el.textContent = isCurr ? (decimal ? formatDecimal(obj.v) : formatCurrency(obj.v)) : Math.round(obj.v); } });
         };
 
-        // Shared chart layout function, fixed to address Year and Legend overlap.
         const getBaseLayout = (title, xTitle, yTitle) => {
             const c = state.isDark ? '#f8fafc' : '#1e293b', g = state.isDark ? '#334155' : '#e2e8f0';
             return { 
@@ -791,8 +791,8 @@
                 paper_bgcolor: 'transparent', plot_bgcolor: 'transparent', font: { color: c, family: 'Inter, sans-serif' }, 
                 xaxis: { title: xTitle, gridcolor: g, showgrid: true, zeroline: false, fixedrange: true }, 
                 yaxis: { title: yTitle, gridcolor: g, showgrid: true, zeroline: false, fixedrange: true }, 
-                margin: { t: 60, r: 10, l: 45, b: 100 }, // Increased bottom margin to create vertical space
-                legend: { orientation: 'h', y: -0.3, x: 0.5, xanchor: 'center', automargin: true }, // Legend moved lower and added automargin for good layout behavior.
+                margin: { t: 60, r: 10, l: 45, b: 100 },
+                legend: { orientation: 'h', y: -0.3, x: 0.5, xanchor: 'center', automargin: true },
                 autosize: true, dragmode: false 
             };
         };
@@ -959,7 +959,6 @@
             
             const totalActualLifetimePaidToBank = actData.summary.totalInterest + principalBorrowAmount;
             
-            // Outer concentric logic
             const blueprintRadius = 20; 
             const costPowerFactor = principalBorrowAmount > 0 ? totalActualLifetimePaidToBank / principalBorrowAmount : 1;
             const maxAllowedRadius = 48; 
@@ -968,16 +967,13 @@
             
             gsap.to(['#concentric-outer', '#concentric-border'], { attr: { r: constMarkupRadius }, duration: 0.8, ease: 'back.out(1.5)' });
             
-            // Populating SVG internal text & External Labels
             updateKineticText(els.results.svgInnerPrincipal, principalBorrowAmount);
             updateKineticText(els.results.outPrincipalVal, principalBorrowAmount);
             updateKineticText(els.results.svgInnerMarkup, actData.summary.totalInterest);
             updateKineticText(els.results.outMarkupVal, actData.summary.totalInterest);
             
-            // Populate the Actual Lifetime Paid label
             updateKineticText(els.results.actualLifetimePaidValue, totalActualLifetimePaidToBank);
 
-            // Update remaining general summaries
             updateKineticText(els.results.mortgageDisplay, principalBorrowAmount);
 
             let yrs_paid = Math.floor(actData.summary.periodsToPayoff / actData.summary.periodsPerYear);
@@ -1014,11 +1010,10 @@
                     touchTimeout = setTimeout(() => {
                         tip.classList.remove('touch-active');
                         if (activeTip === tip) activeTip = null;
-                    }, 1200); // Disappears 1.2s after lifting finger
+                    }, 1200);
                 }, { passive: true });
             });
 
-            // Instantly drop tooltips if tapping anywhere else on the screen
             document.addEventListener('touchstart', (e) => {
                 if (activeTip && !e.target.closest('.help-tip')) {
                     activeTip.classList.remove('touch-active');
@@ -1027,7 +1022,6 @@
             }, { passive: true });
         };
 
-        // DOM Listeners & Initialization
         els.masterBtns.forEach(btn => {
             btn.addEventListener('click', (e) => {
                 els.masterBtns.forEach(b => b.classList.remove('active'));
@@ -1074,7 +1068,7 @@
             }
             document.body.className = `mode-${state.currentMode} ${state.isDark ? 'dark-mode' : ''}`;
             
-            setupTouchTooltips(); // Initialize the new touch listener behavior
+            setupTouchTooltips(); 
             calculate();
             
             gsap.from(".gsap-fade-in", { y: -20, opacity: 0, duration: 0.8, ease: "power3.out" });
