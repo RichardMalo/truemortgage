@@ -9,7 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
         *, *::before, *::after { box-sizing: border-box; }
 
@@ -46,7 +46,69 @@
         .container { width: 100%; max-width: 1400px; margin: 0 auto; padding: 30px 20px; }
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; flex-wrap: wrap; gap: 20px;}
         h1, h2, h3 { font-weight: 800; margin: 0; letter-spacing: -0.02em; }
-        .section-title { margin: 0 0 15px 0; color: var(--primary-color); font-size: 1.15rem; }
+        .section-title { margin: 0 0 15px 0; color: var(--primary-color); font-size: 1.15rem; display: flex; align-items: center;}
+
+        /* Elegant Tooltip Styles - Fortified to break out of containers */
+        .help-tip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 8px;
+            cursor: help;
+            position: relative;
+            color: var(--primary-color);
+            font-weight: 800;
+            font-size: 0.75rem;
+            background: rgba(37, 99, 235, 0.1);
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            vertical-align: middle;
+            transition: background 0.3s ease, transform 0.2s ease;
+        }
+        .help-tip:hover { background: rgba(37, 99, 235, 0.2); transform: scale(1.1); }
+        .help-tip .tooltip-text {
+            visibility: hidden;
+            width: max-content;
+            max-width: 250px;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            text-align: left;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 15px 35px -5px rgba(0,0,0,0.35);
+            position: absolute;
+            z-index: 999999; /* Massive z-index to force it to top */
+            bottom: 140%;
+            left: 50%;
+            transform: translateX(-50%) translateY(10px);
+            opacity: 0;
+            transition: opacity 0.3s var(--spring-easing), transform 0.3s var(--spring-easing);
+            font-size: 0.75rem;
+            font-weight: 500;
+            line-height: 1.5;
+            white-space: normal;
+            pointer-events: none;
+            text-transform: none;
+            letter-spacing: normal;
+            font-family: 'Inter', sans-serif;
+        }
+        .help-tip .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -6px;
+            border-width: 6px;
+            border-style: solid;
+            border-color: var(--card-bg) transparent transparent transparent;
+        }
+        .help-tip:hover .tooltip-text, .help-tip:active .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
 
         /* Main Mode Switcher */
         .master-mode-selector {
@@ -67,10 +129,11 @@
             background-color: var(--card-bg); padding: 28px; border-radius: 28px;
             box-shadow: var(--shadow); border: 1px solid rgba(255, 255, 255, 0.05);
             transition: transform 0.4s var(--spring-easing), box-shadow 0.4s var(--spring-easing), background-color 0.3s ease;
-            width: 100%; overflow: hidden;
+            width: 100%; 
+            /* overflow: hidden; REMOVED to allow tooltips to spill out */
         }
 
-        @media (hover: hover) and (pointer: fine) { .squishy-interactive:hover { transform: scale(1.015) translateY(-2px); box-shadow: var(--shadow-hover); } }
+        @media (hover: hover) and (pointer: fine) { .squishy-interactive:hover { transform: scale(1.015) translateY(-2px); box-shadow: var(--shadow-hover); z-index: 10; } }
         .squishy-interactive:active { transform: scale(0.98); }
         
         .mode-toggle { display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600;}
@@ -90,8 +153,8 @@
 
         .input-group-row { display: flex; gap: 16px; margin-bottom: 16px; width: 100%; }
         .input-group { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-        .input-group label { display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; color: var(--text-color); opacity: 0.9;}
-        .tooltip { font-size: 0.75rem; color: #888; font-weight: 400;}
+        .input-group label { display: flex; align-items: center; font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; color: var(--text-color); opacity: 0.9;}
+        .inline-tooltip-text { font-size: 0.75rem; color: #888; font-weight: 400; margin-left: 4px;}
 
         input, .custom-select {
             width: 100%; padding: 16px; border: 2px solid transparent; border-radius: 14px; background-color: var(--input-bg);
@@ -116,10 +179,11 @@
         
         .stat-box { 
             background: var(--input-bg); padding: 16px; border-radius: 20px; text-align: center; width: 100%; 
-            position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: center;
+            position: relative; /* overflow: hidden; REMOVED to allow tooltips to spill out */
+            display: flex; flex-direction: column; justify-content: center;
             container-type: inline-size; 
         }
-        .stat-box label { font-size: 0.85rem; font-weight: 700; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.05em; }
+        .stat-box label { font-size: 0.85rem; font-weight: 700; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.05em; display: inline-flex; justify-content: center;}
         
         .kinetic-text { 
             font-size: clamp(1rem, 12cqw, 1.6rem); font-weight: 800; margin-top: 8px; 
@@ -161,7 +225,7 @@
         
         #error-message { background-color: var(--danger-color); color: white; padding: 15px; border-radius: 14px; margin-bottom: 20px; text-align: center; font-weight: 600; display: none;}
 
-        /* FIXED: Hiding logic that does NOT break block layouts */
+        /* Safe mode-switching logic */
         body.mode-mortgage .cc-only { display: none !important; }
         body.mode-cc .mortgage-only { display: none !important; }
 
@@ -189,6 +253,11 @@
             
             .chart-wrapper { padding: 5px; min-height: 320px; border-radius: 16px; }
             .plotly-container { min-height: 300px; }
+
+            /* Ensure tooltips don't clip off-screen on mobile */
+            .help-tip .tooltip-text { left: 0; transform: translateX(-40%) translateY(10px); }
+            .help-tip:hover .tooltip-text, .help-tip:active .tooltip-text { transform: translateX(-40%) translateY(0); }
+            .help-tip .tooltip-text::after { left: 40%; }
         }
     </style>
 </head>
@@ -224,30 +293,30 @@
                         
                         <div class="input-group-row">
                             <div class="input-group mortgage-only">
-                                <label>Home Price ($)</label>
+                                <label>Home Price ($) <span class="help-tip">?<span class="tooltip-text">The total market value or intended purchase price of the property.</span></span></label>
                                 <input type="number" id="homePrice" inputmode="decimal" value="850000" step="1000" min="0">
                             </div>
                             <div class="input-group mortgage-only">
-                                <label>Down Payment ($)</label>
+                                <label>Down Payment ($) <span class="help-tip">?<span class="tooltip-text">The upfront cash paid towards the purchase, which immediately builds equity and reduces your starting loan balance.</span></span></label>
                                 <input type="number" id="downPayment" inputmode="decimal" value="0" step="1000" min="0">
                             </div>
                             <div class="input-group cc-only">
-                                <label>Current Balance ($)</label>
+                                <label>Current Balance ($) <span class="help-tip">?<span class="tooltip-text">The total amount currently owed on your revolving credit line.</span></span></label>
                                 <input type="number" id="ccBalance" inputmode="decimal" value="15000" step="100" min="0">
                             </div>
                         </div>
                         
                         <div class="input-group-row">
                             <div class="input-group">
-                                <label>Interest Rate (APR %)</label>
+                                <label>Interest Rate (APR %) <span class="help-tip">?<span class="tooltip-text">The annualized cost of borrowing money. Even a fractional reduction here significantly curtails long-term wealth drain.</span></span></label>
                                 <input type="number" id="interestRate" inputmode="decimal" step="0.01" required value="2.62" min="0">
                             </div>
                             <div class="input-group mortgage-only">
-                                <label>Amortization (Yrs)</label>
+                                <label>Amortization (Yrs) <span class="help-tip">?<span class="tooltip-text">The total lifespan of the loan. Compressing this timeline increases monthly payments but drastically cuts the total interest remitted to the bank.</span></span></label>
                                 <input type="number" id="amortization" inputmode="decimal" value="25" step="any" min="0.1">
                             </div>
                             <div class="input-group cc-only">
-                                <label>Province <span class="tooltip">(Min. Payment Law)</span></label>
+                                <label>Province <span class="inline-tooltip-text">(Min. Payment Law)</span></label>
                                 <select id="province" class="custom-select">
                                     <option value="ON">Ontario (Standard 3%)</option>
                                     <option value="QC">Quebec (Legal 5%)</option>
@@ -257,11 +326,11 @@
 
                         <div class="input-group-row mortgage-only">
                             <div class="input-group">
-                                <label>Term Length (Yrs)</label>
+                                <label>Term Length (Yrs) <span class="help-tip">?<span class="tooltip-text">The duration your current contract rules and interest rate are locked in before requiring renewal or renegotiation.</span></span></label>
                                 <input type="number" id="term" inputmode="decimal" value="5" step="any" min="0.1">
                             </div>
                             <div class="input-group">
-                                <label>Compounding</label>
+                                <label>Compounding <span class="help-tip">?<span class="tooltip-text">How frequently interest is calculated on the principal. Canadian fixed mortgages typically compound semi-annually, making them slightly cheaper mathematically than US monthly compound loans at the same rate.</span></span></label>
                                 <select id="compounding" class="custom-select">
                                     <option value="semi">Canadian (Semi-Annual)</option>
                                     <option value="monthly">US (Monthly)</option>
@@ -274,7 +343,7 @@
                         <h3 class="section-title">Aggressive Strategy</h3>
                         <div class="input-group-row mortgage-only">
                             <div class="input-group">
-                                <label>Payment Frequency</label>
+                                <label>Payment Frequency <span class="help-tip">?<span class="tooltip-text">Accelerated options (like Bi-Weekly) covertly sneak in an extra month's worth of payments per year, significantly compounding your timeline to a zero balance.</span></span></label>
                                 <select id="paymentFrequency" class="custom-select">
                                     <option value="monthly">Monthly</option>
                                     <option value="semi-monthly">Semi-Monthly (24/yr)</option>
@@ -285,8 +354,8 @@
                         </div>
                         <div class="input-group-row">
                             <div class="input-group">
-                                <label class="mortgage-only">Extra Payment Surplus ($)</label>
-                                <label class="cc-only">Monthly Surplus ($) <span class="tooltip">Above Minimum</span></label>
+                                <label class="mortgage-only">Extra Payment Surplus ($) <span class="help-tip">?<span class="tooltip-text">Additional capital deployed directly against your principal balance every period, bypassing interest charges entirely.</span></span></label>
+                                <label class="cc-only">Monthly Surplus ($) <span class="inline-tooltip-text">Above Minimum</span> <span class="help-tip">?<span class="tooltip-text">Paying only the minimum ensures you remain in debt for decades. Any surplus here acts as an instant, guaranteed return on investment equal to your APR.</span></span></label>
                                 <input type="number" id="extraPayment" inputmode="decimal" required value="0" step="50" min="0">
                             </div>
                         </div>
@@ -298,7 +367,10 @@
                         </div>
 
                         <div class="section-header-with-toggle" style="margin-top: 20px;">
-                            <h3 class="section-title" style="margin:0; font-size: 0.95rem;">Opportunity Cost</h3>
+                            <h3 class="section-title" style="margin:0; font-size: 0.95rem;">
+                                Opportunity Cost
+                                <span class="help-tip">?<span class="tooltip-text">A strategic projection: Does aggressively paying down low-interest debt build more net worth over time than investing that same cash in the market?</span></span>
+                            </h3>
                             <div class="toggle-wrapper" title="Compare paying off vs investing">
                                 <label class="switch small-switch">
                                     <input type="checkbox" id="oppCostToggle">
@@ -318,7 +390,10 @@
 
                     <div class="bento-card form-card mortgage-only" style="margin-top: 24px;">
                         <div class="section-header-with-toggle">
-                            <h3 class="section-title" style="margin:0;">Taxes & Insurance</h3>
+                            <h3 class="section-title" style="margin:0;">
+                                Taxes & Insurance
+                                <span class="help-tip">?<span class="tooltip-text">Often referred to as PITI (Principal, Interest, Taxes, Insurance). These are non-equity holding costs that affect your required monthly cash flow.</span></span>
+                            </h3>
                             <div class="toggle-wrapper" title="Include Escrow (PITI)">
                                 <label class="switch small-switch">
                                     <input type="checkbox" id="includePitiToggle">
@@ -343,7 +418,7 @@
                                     <input type="number" id="hoaFees" inputmode="decimal" value="0" step="10" min="0">
                                 </div>
                                 <div class="input-group">
-                                    <label>PMI (%/yr) <span class="tooltip">(Drops at 80% LTV)</span></label>
+                                    <label>PMI (%/yr) <span class="inline-tooltip-text">(Drops at 80% LTV)</span></label>
                                     <input type="number" id="pmiRate" inputmode="decimal" value="0.5" step="0.01" min="0">
                                 </div>
                             </div>
@@ -360,7 +435,10 @@
             <div class="column gsap-slide-up" style="animation-delay: 0.1s;">
                 
                 <div class="concentric-visualization-card">
-                    <h3 class="section-title">The Gravity of the Debt</h3>
+                    <h3 class="section-title">
+                        The Gravity of the Debt
+                        <span class="help-tip">?<span class="tooltip-text">This visualizes the sheer scale of the bank's markup (red) relative to the actual asset or credit you secured (blue). A larger red circle indicates low efficiency in capital allocation.</span></span>
+                    </h3>
                     <div class="dynamic-concentric-stack">
                         <div class="stack-wrapper">
                             <svg viewBox="0 0 100 100" class="concentric-svg-comparison" style="width: 100%; height: 100%;">
@@ -399,11 +477,11 @@
                             <div class="kinetic-text" id="mortgageAmountDisplay" data-val="0">$0.00</div>
                         </div>
                         <div class="stat-box danger-box squishy-interactive cc-only">
-                            <label class="danger-text">Daily Vampire Drain</label>
+                            <label class="danger-text">Daily Vampire Drain <span class="help-tip" style="background: rgba(239, 68, 68, 0.2);"><span class="tooltip-text">The exact amount of wealth lost every 24 hours to interest while carrying this balance.</span></span></label>
                             <div class="kinetic-text danger-text" id="dailyVampireDrain" data-val="0">$0.00</div>
                         </div>
                         <div class="stat-box squishy-interactive mortgage-only">
-                            <label>Balance at Term End</label>
+                            <label>Balance at Term End <span class="help-tip"><span class="tooltip-text">The remaining principal you will owe when your current locked term expires and requires renewal.</span></span></label>
                             <div class="kinetic-text" id="balanceAtTerm" data-val="0">$0.00</div>
                         </div>
                         <div class="stat-box squishy-interactive">
@@ -411,7 +489,7 @@
                             <div class="kinetic-text" id="paidOffIn">0 yrs</div>
                         </div>
                         <div class="stat-box highlight-box squishy-interactive">
-                            <label>Interest Saved (vs Minimums)</label>
+                            <label>Interest Saved <span class="inline-tooltip-text">(vs Minimums)</span></label>
                             <div class="kinetic-text highlight-text" id="extraSavedTotal" data-val="0">$0.00</div>
                         </div>
                     </div>
@@ -419,7 +497,7 @@
                     <div class="circles-container">
                         <div class="circle-wrapper squishy-interactive mortgage-only">
                             <div class="true-payment-circle" id="monthlyPaymentCircle"></div>
-                            <span id="monthlyPaymentLabel">Periodic Payment Comp</span>
+                            <span>Periodic Payment Comp <span class="help-tip">?<span class="tooltip-text">Visualizes exactly where each dollar goes per payment cycle. Ideally, the blue (Principal) wedge grows larger over time as you build equity.</span></span></span>
                         </div>
                         <div class="circle-wrapper squishy-interactive">
                             <div class="payment-breakdown-circle" id="paymentBreakdownCircle"></div>
@@ -431,7 +509,10 @@
 
             <div class="full-width-section column gsap-slide-up" style="animation-delay: 0.2s;">
                 <div class="bento-card">
-                    <h3 class="section-title">Visual Analysis</h3>
+                    <h3 class="section-title">
+                        Visual Analysis
+                        <span class="help-tip">?<span class="tooltip-text">These charts model the lifecycle of your debt. They map wealth lost to bank markup versus retained equity, and illustrate how strategic capital allocation alters your trajectory over time.</span></span>
+                    </h3>
                     <div class="charts-grid">
                         <div class="chart-wrapper chart-box squishy-interactive">
                             <div id="chart3" class="plotly-container"></div>
@@ -683,6 +764,7 @@
             gsap.to(obj, { v: val, duration: 0.6, ease: "power2.out", onUpdate: () => { el.textContent = isCurr ? (decimal ? formatDecimal(obj.v) : formatCurrency(obj.v)) : Math.round(obj.v); } });
         };
 
+        // Shared chart layout function, fixed to address Year and Legend overlap.
         const getBaseLayout = (title, xTitle, yTitle) => {
             const c = state.isDark ? '#f8fafc' : '#1e293b', g = state.isDark ? '#334155' : '#e2e8f0';
             return { 
@@ -690,7 +772,9 @@
                 paper_bgcolor: 'transparent', plot_bgcolor: 'transparent', font: { color: c, family: 'Inter, sans-serif' }, 
                 xaxis: { title: xTitle, gridcolor: g, showgrid: true, zeroline: false, fixedrange: true }, 
                 yaxis: { title: yTitle, gridcolor: g, showgrid: true, zeroline: false, fixedrange: true }, 
-                margin: { t: 60, r: 10, l: 45, b: 80 }, legend: { orientation: 'h', y: -0.3, x: 0.5, xanchor: 'center' }, autosize: true, dragmode: false 
+                margin: { t: 60, r: 10, l: 45, b: 100 }, // Increased bottom margin to create vertical space
+                legend: { orientation: 'h', y: -0.3, x: 0.5, xanchor: 'center', automargin: true }, // Legend moved lower and added automargin for good layout behavior.
+                autosize: true, dragmode: false 
             };
         };
 
